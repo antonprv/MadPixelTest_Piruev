@@ -114,7 +114,6 @@ Bootstrap → PreloadAssets → MainMenu ←→ LoadLevel → GameLoop
 
 **`BootstrapState`**
 - Инициализирует Addressables (`InitializeAsync`)
-- Устанавливает `targetFrameRate = 60`, `vSyncCount = 0` для стабильного FPS на мобиле
 - Загружает сцену `Initial` (пустая Bootstrap-сцена)
 - Переходит в `PreloadAssetsState`
 
@@ -638,7 +637,6 @@ Bootstrap → PreloadAssets → MainMenu ←→ LoadLevel → GameLoop
 
 **`BootstrapState`**
 - Initializes Addressables (`InitializeAsync`)
-- Sets `targetFrameRate = 60`, `vSyncCount = 0` for stable mobile FPS
 - Loads the `Initial` scene (empty bootstrap scene)
 - Transitions to `PreloadAssetsState`
 
