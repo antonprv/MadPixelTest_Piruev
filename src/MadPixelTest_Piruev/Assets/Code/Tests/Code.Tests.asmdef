@@ -2,6 +2,8 @@
     "name": "Code.Tests",
     "rootNamespace": "Code.Tests",
     "references": [
+        "Zenjex",
+        "Reflex",
         "Code",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
@@ -14,7 +16,8 @@
     "overrideReferences": true,
     "precompiledReferences": [
         "nunit.framework.dll",
-        "NSubstitute.dll"
+        "NSubstitute.dll",
+        "R3.dll"
     ],
     "autoReferenced": false,
     "defineConstraints": [

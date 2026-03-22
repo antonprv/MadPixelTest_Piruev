@@ -3,15 +3,13 @@
 
 using System.Threading;
 
-using Code.Infrastructure.StateMachine.States.Types;
-
 using Code.Infrastructure.AssetManagement;
 using Code.Infrastructure.Loading;
+using Code.Infrastructure.SceneLoader;
 using Code.Infrastructure.StateMachine.States.Interfaces;
+using Code.Infrastructure.StateMachine.States.Types;
 
 using Cysharp.Threading.Tasks;
-using Code.Infrastructure.SceneLoader;
-using System;
 
 namespace Code.Infrastructure.StateMachine.States
 {

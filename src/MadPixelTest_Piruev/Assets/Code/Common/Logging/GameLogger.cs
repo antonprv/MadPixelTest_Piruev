@@ -58,7 +58,7 @@ namespace Code.Common.Extensions.Logging
 #endif
       }
 #endif
-      }
+    }
 
     public void LogValue<TProperty, TValue>(TProperty property, TValue value)
     {

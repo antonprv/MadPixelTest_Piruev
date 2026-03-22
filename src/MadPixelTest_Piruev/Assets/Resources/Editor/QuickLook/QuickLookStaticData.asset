@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 558e619ab2642704ebb736fd593a037e, type: 3}
   m_Name: QuickLookStaticData
   m_EditorClassIdentifier: Assembly-CSharp-Editor::Code.Editor.Tools.QuickLook.Data.QuickLookStaticData
-  Prefabs: []
+  Prefabs:
+  - {fileID: 3908241888043902561, guid: 24c0dd37e3c266f4d9275d5b850899b5, type: 3}
   ScriptableObjects:
   - {fileID: 11400000}

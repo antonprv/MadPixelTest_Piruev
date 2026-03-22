@@ -33,13 +33,13 @@ namespace Code.Infrastructure.StateMachine.States
     public StateType Type => StateType.LoadLevel;
 
     private readonly IGameStateMachine _gsm;
-    private readonly ISceneLoader      _sceneLoader;
+    private readonly ISceneLoader _sceneLoader;
 
     private CancellationTokenSource _cts;
 
     public LoadLevelState(IGameStateMachine gsm, ISceneLoader sceneLoader)
     {
-      _gsm         = gsm;
+      _gsm = gsm;
       _sceneLoader = sceneLoader;
     }
 

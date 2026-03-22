@@ -1,4 +1,4 @@
-// Created by Anton Piruev in 2026. 
+// Created by Anton Piruev in 2026.
 // Any direct commercial use of derivative work is strictly prohibited.
 
 using System;
@@ -7,6 +7,7 @@ using System.Threading;
 using Code.Common.Extensions.Logging;
 using Code.Data.StaticData;
 using Code.Infrastructure.AssetManagement;
+using Code.Infrastructure.Services.StaticData.Interfaces;
 
 using Cysharp.Threading.Tasks;
 
@@ -17,7 +18,11 @@ using UnityEngine;
 namespace Code.Infrastructure.AssetsPreloader
 {
   /// <summary>
-  /// Warms up Addressable icons of all items from ItemManifest before gameplay starts.
+  /// Warms up Addressable icons of all items before gameplay starts.
+  ///
+  /// Depends on IItemDataSubservice (not ItemManifest directly) —
+  /// static data loading and icon preloading are now separate responsibilities.
+  /// IStaticDataService.LoadAllAsync() must be called before PreloadItemIconsAsync().
   ///
   /// Parallel loading pattern:
   ///   Create array of UniTasks — one task per ItemConfig.
@@ -34,30 +39,28 @@ namespace Code.Infrastructure.AssetsPreloader
     private readonly Subject<float> _progressSubject = new();
     public Observable<float> Progress => _progressSubject;
 
-    private readonly ItemManifest _manifest;
-    private readonly IAssetLoader _assetLoader;
-    private readonly IGameLog _logger;
+    private readonly IItemDataSubservice _itemData;
+    private readonly IAssetLoader        _assetLoader;
+    private readonly IGameLog            _logger;
 
     public AddressableAssetPreloader(
-      ItemManifest manifest,
-      IAssetLoader assetLoader,
-      IGameLog logger
-      )
+      IItemDataSubservice itemData,
+      IAssetLoader        assetLoader,
+      IGameLog            logger)
     {
-      _manifest = manifest;
+      _itemData    = itemData;
       _assetLoader = assetLoader;
-      _logger = logger;
+      _logger      = logger;
     }
 
     public async UniTask PreloadItemIconsAsync(IProgress<float> progress, CancellationToken ct)
     {
-      var items = _manifest.Items;
+      var items = _itemData.Items;
       int total = items.Count;
       if (total == 0) return;
 
       int completed = 0;
 
-      // Create tasks for each item that has Icon defined
       var tasks = new UniTask[total];
       for (int i = 0; i < total; i++)
       {
@@ -71,7 +74,6 @@ namespace Code.Infrastructure.AssetsPreloader
         }, ct);
       }
 
-      // Parallel loading — all icons load simultaneously
       await UniTask.WhenAll(tasks);
 
       _progressSubject.OnNext(1f);

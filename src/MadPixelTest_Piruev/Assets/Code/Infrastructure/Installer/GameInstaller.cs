@@ -1,4 +1,4 @@
-// Created by Anton Piruev in 2026. 
+// Created by Anton Piruev in 2026.
 // Any direct commercial use of derivative work is strictly prohibited.
 
 using System.Collections;
@@ -10,13 +10,22 @@ using Code.Infrastructure.AssetsPreloader;
 using Code.Infrastructure.Installer.Factory;
 using Code.Infrastructure.Loading;
 using Code.Infrastructure.SceneLoader;
+using Code.Infrastructure.Services.StaticData;
+using Code.Infrastructure.Services.StaticData.Interfaces;
+using Code.Infrastructure.Services.StaticData.Subservices;
 using Code.Infrastructure.Services.Time;
 using Code.Infrastructure.StateMachine;
 using Code.Infrastructure.StateMachine.Factory;
 using Code.Infrastructure.StateMachine.States;
-using Code.UI.Services.BottomSlots;
-using Code.UI.Services.DragDrop;
-using Code.UI.Services.Inventory;
+using Code.Model.Services.BottomSlots;
+using Code.Model.Services.DragDrop;
+using Code.Model.Services.Inventory;
+using Code.Presenter.Bag;
+using Code.Presenter.BottomSlots;
+using Code.Presenter.DragDrop;
+using Code.ViewModel.Bag;
+using Code.ViewModel.BottomSlots;
+using Code.ViewModel.DragIcon;
 
 using Reflex.Core;
 
@@ -25,91 +34,63 @@ using Zenjex.Extensions.Core;
 namespace Code.Infrastructure.Installer
 {
   /// <summary>
-  /// Root DI installer of the project.
+  /// Root DI installer.
+  ///
+  /// Registration order mirrors the MVP+MVVM architecture:
+  ///   1. Infrastructure      (logging, assets, scene loading, time)
+  ///   2. Static data         (StaticDataService + subservices)
+  ///   3. Domain services     (Model / domain)
+  ///   4. MVP Presenters      (mediation layer)
+  ///   5. MVVM ViewModels     (UI state layer)
+  ///   6. GSM                 (game state machine)
   /// </summary>
   public class GameInstaller : ProjectRootInstaller
   {
     private GameInstance _gameInstance;
-    private ILoadScreen _loadScreen;
+    private ILoadScreen  _loadScreen;
 
-    #region Game Instance Setup
+    #region Lifecycle
 
     public override IEnumerator InstallGameInstanceRoutine()
     {
       yield return InstallerFactory.CreateLoadingScreenRoutine(screen =>
-          _loadScreen = screen);
+        _loadScreen = screen);
 
       RootContainer.Bind<ILoadScreen>()
         .FromInstance(_loadScreen)
         .AsSingle();
 
       yield return InstallerFactory.CreateGameInstanceRoutine(
-      onBeforeActivate: instance =>
-      {
-        _gameInstance = instance;
-        BindGameInstanceComponents(instance);
-      });
-    }
-
-    private static void BindGameInstanceComponents(GameInstance instance)
-    {
-      RootContainer.Bind<ICoroutineRunner>()
-        .FromInstance(instance)
-        .AsSingle();
+        onBeforeActivate: instance =>
+        {
+          _gameInstance = instance;
+          RootContainer.Bind<ICoroutineRunner>()
+            .FromInstance(instance)
+            .AsSingle();
+        });
     }
 
     #endregion
-
-    #region Bindings
 
     public override void InstallBindings(ContainerBuilder builder)
     {
-      // Logging
       BindLogging(builder);
-
-      // Game State Machine
-      BindGSM(builder);
-
-      // Asset Management
       BindAssetManagement(builder);
-      BindSceneLoading(builder);
-
-      // Gameplay Services
-      BindGameplayServices(builder);
-
-      // Unity Services
+      BindSceneLoader(builder);
       BindUnityServices(builder);
+      BindStaticData(builder);
+      BindDomainServices(builder);
+      BindPresenters(builder);
+      BindViewModels(builder);
+      BindGSM(builder);
     }
-
-    #endregion
 
     public override void LaunchGame() => _gameInstance.LaunchGame();
 
-    #region Logging
+    #region Infrastructure
 
     private void BindLogging(ContainerBuilder builder) =>
       builder.Bind<IGameLog>().To<GameLogger>().AsSingle();
-
-    #endregion
-
-    #region Game State Machine
-
-    private void BindGSM(ContainerBuilder builder)
-    {
-      // StateFactory resolves states from container
-      builder.Bind<StateFactory>().AsSingle();
-
-      builder.Bind<IGameStateMachine>().To<GameStateMachine>().AsSingle();
-
-      // States — AsTransient: fresh instance on each transition
-      builder.Bind<BootstrapState>().AsTransient();
-      builder.Bind<PreloadAssetsState>().AsTransient();
-      builder.Bind<GameLoopState>().AsTransient();
-    }
-
-    #endregion
-
-    #region Asset Management
 
     private void BindAssetManagement(ContainerBuilder builder)
     {
@@ -117,14 +98,31 @@ namespace Code.Infrastructure.Installer
       builder.Bind<IAssetsPreloader>().To<AddressableAssetPreloader>().AsSingle();
     }
 
-    private void BindSceneLoading(ContainerBuilder builder) =>
+    private void BindSceneLoader(ContainerBuilder builder) =>
       builder.Bind<ISceneLoader>().To<AddressableSceneLoader>().AsSingle();
+
+    private void BindUnityServices(ContainerBuilder builder) =>
+      builder.Bind<ITimeService>().To<UnityTimeService>().AsSingle();
 
     #endregion
 
-    #region Gameplay Services
+    #region Static data
 
-    private void BindGameplayServices(ContainerBuilder builder)
+    private void BindStaticData(ContainerBuilder builder)
+    {
+      // Subservices — each knows how to load one piece of data
+      builder.Bind<IBagConfigSubservice>().To<BagConfigSubservice>().AsSingle();
+      builder.Bind<IItemDataSubservice>().To<ItemDataSubservice>().AsSingle();
+
+      // Aggregator — entry point for the state machine
+      builder.Bind<IStaticDataService>().To<StaticDataService>().AsSingle();
+    }
+
+    #endregion
+
+    #region Domain services (Model layer)
+
+    private void BindDomainServices(ContainerBuilder builder)
     {
       builder.Bind<GridInventoryService>()
         .BindInterfacesAndSelf()   // → IGridInventoryService + IInitializable
@@ -141,10 +139,40 @@ namespace Code.Infrastructure.Installer
 
     #endregion
 
-    #region Unity Services
+    #region MVP Presenters
 
-    private void BindUnityServices(ContainerBuilder builder) =>
-      builder.Bind<ITimeService>().To<UnityTimeService>().AsSingle();
+    private void BindPresenters(ContainerBuilder builder)
+    {
+      builder.Bind<IBagPresenter>().To<BagPresenter>().AsSingle();
+      builder.Bind<IBottomSlotsPresenter>().To<BottomSlotsPresenter>().AsSingle();
+      builder.Bind<IDragDropPresenter>().To<DragDropPresenter>().AsSingle();
+    }
+
+    #endregion
+
+    #region MVVM ViewModels
+
+    private void BindViewModels(ContainerBuilder builder)
+    {
+      builder.Bind<IDragIconViewModel>().To<DragIconViewModel>().AsSingle();
+      builder.Bind<IBagViewModel>().To<BagViewModel>().AsSingle();
+      builder.Bind<IBottomSlotsViewModel>().To<BottomSlotsViewModel>().AsSingle();
+    }
+
+    #endregion
+
+    #region GSM
+
+    private void BindGSM(ContainerBuilder builder)
+    {
+      builder.Bind<StateFactory>().AsSingle();
+      builder.Bind<IGameStateMachine>().To<GameStateMachine>().AsSingle();
+
+      builder.Bind<BootstrapState>().AsTransient();
+      builder.Bind<PreloadAssetsState>().AsTransient();
+      builder.Bind<LoadLevelState>().AsTransient();
+      builder.Bind<GameLoopState>().AsTransient();
+    }
 
     #endregion
   }

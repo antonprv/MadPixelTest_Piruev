@@ -22,6 +22,12 @@ MonoBehaviour:
     - Preload_UI
     - Streaming_UI
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7b1b8e20096650d44a1811b0b79ac545
+    m_Address: Sprites
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Streaming_UI
+    FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: 033c2b6f42734a1438bc376439547949, type: 2}
   m_SchemaSet:

@@ -5,10 +5,10 @@ namespace Code.Infrastructure.StateMachine.States.Types
 {
   public enum StateType
   {
-    None          = 0,
-    Bootstrap     = 1,
+    None = 0,
+    Bootstrap = 1,
     PreloadAssets = 2,
-    LoadLevel     = 3,
-    GameLoop      = 4,
+    LoadLevel = 3,
+    GameLoop = 4,
   }
 }

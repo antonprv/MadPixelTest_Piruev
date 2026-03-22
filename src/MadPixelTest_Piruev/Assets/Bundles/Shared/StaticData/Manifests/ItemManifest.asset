@@ -12,4 +12,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f70f40aa4c4c72741925fb9c83f5968a, type: 3}
   m_Name: ItemManifest
   m_EditorClassIdentifier: Code.Data.StaticData::Code.Data.StaticData.ItemManifest
-  <Items>k__BackingField: []
+  Items:
+    keyData:
+    - shield
+    - sword
+    - sword_lv2
+    valueData:
+    - m_AssetGUID: 165923749062642488880afba9c888c6
+      m_SubObjectName: 
+      m_SubObjectType: 
+      m_SubObjectGUID: 
+      m_EditorAssetChanged: 0
+    - m_AssetGUID: 6c4b4b9324f0d4c4182b15626576d6a5
+      m_SubObjectName: 
+      m_SubObjectType: 
+      m_SubObjectGUID: 
+      m_EditorAssetChanged: 0
+    - m_AssetGUID: 8d2b5ca9b3476194583702cf1a7b8a3f
+      m_SubObjectName: 
+      m_SubObjectType: 
+      m_SubObjectGUID: 
+      m_EditorAssetChanged: 0

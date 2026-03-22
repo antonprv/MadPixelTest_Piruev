@@ -1,24 +1,30 @@
-// Created by Anton Piruev in 2026. 
+// Created by Anton Piruev in 2026.
 // Any direct commercial use of derivative work is strictly prohibited.
 
-using System.Collections.Generic;
+using Code.Common.CustomTypes.Domain.Collections;
 
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 
 namespace Code.Data.StaticData
 {
   /// <summary>
   /// Manifest of all ItemConfigs in the game.
-  /// AssetsPreloader reads this list and warms up all item icons
-  /// before gameplay starts, so first render is instant.
   ///
-  /// Adding a new item: create ItemConfig SO → add it here.
-  /// No code changes needed.
+  /// Stores Addressable references keyed by ItemId (string).
+  /// ItemDataSubservice loads this manifest, then resolves each reference
+  /// on demand via IAssetLoader.
+  ///
+  /// Adding a new item:
+  ///   1. Create an ItemConfig ScriptableObject asset.
+  ///   2. Mark it as Addressable.
+  ///   3. Open this manifest → click "AutoFill from Assets" in the inspector.
+  ///      The editor will find all ItemConfig assets and fill the dictionary.
+  ///   No code changes needed.
   /// </summary>
   [CreateAssetMenu(fileName = "ItemManifest", menuName = "StaticData/Item Manifest")]
   public class ItemManifest : ScriptableObject
   {
-    [field: SerializeField]
-    public List<ItemConfig> Items { get; private set; } = new();
+    public DictionaryData<string, AssetReferenceT<ItemConfig>> Items = new();
   }
 }

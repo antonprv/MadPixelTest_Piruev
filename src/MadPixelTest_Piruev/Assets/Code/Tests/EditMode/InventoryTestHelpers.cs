@@ -3,12 +3,12 @@
 
 using System.Collections.Generic;
 
-using Code.Core;
 using Code.Data.StaticData;
+using Code.Model.Core;
 
 using UnityEngine;
 
-namespace Code.Tests
+namespace Code.Tests.EditMode
 {
   /// <summary>
   /// Helper methods for creating test objects without Unity context.
