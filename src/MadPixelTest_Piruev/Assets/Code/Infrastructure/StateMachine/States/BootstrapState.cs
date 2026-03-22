@@ -3,16 +3,20 @@
 
 using System.Threading;
 
+using Code.Infrastructure.StateMachine.States.Types;
+
 using Code.Infrastructure.AssetManagement;
 using Code.Infrastructure.Loading;
 using Code.Infrastructure.StateMachine.States.Interfaces;
 
 using Cysharp.Threading.Tasks;
+using Code.Infrastructure.SceneLoader;
+using System;
 
-namespace Code.Infrastructure.StateMachine
+namespace Code.Infrastructure.StateMachine.States
 {
   /// <summary>
-  /// State 1 of 3.
+  /// State 1 of 4.
   ///
   /// Responsibilities:
   ///   1. Initialize Addressables (once per session)
@@ -31,17 +35,20 @@ namespace Code.Infrastructure.StateMachine
     private readonly IGameStateMachine _gsm;
     private readonly IAssetLoader _assetLoader;
     private readonly ILoadScreen _loadingScreen;
+    private readonly ISceneLoader _sceneLoader;
 
     private CancellationTokenSource _cts;
 
     public BootstrapState(
       IGameStateMachine gsm,
       IAssetLoader assetLoader,
+      ISceneLoader sceneLoader,
       ILoadScreen loadingScreen)
     {
       _gsm = gsm;
       _assetLoader = assetLoader;
       _loadingScreen = loadingScreen;
+      _sceneLoader = sceneLoader;
     }
 
     public void Enter() => EnterAsync().Forget();
@@ -61,6 +68,15 @@ namespace Code.Infrastructure.StateMachine
 
       if (ct.IsCancellationRequested) return;
 
+      await _sceneLoader.LoadAsync(SceneAddresses.Initial, ct);
+
+      if (ct.IsCancellationRequested) return;
+
+      OnSceneLoaded();
+    }
+
+    private void OnSceneLoaded()
+    {
       // 3. Transition to asset preloading
       _gsm.Enter<PreloadAssetsState>();
     }

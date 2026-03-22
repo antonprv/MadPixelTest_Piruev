@@ -1,15 +1,16 @@
 // Created by Anton Piruev in 2026.
 // Any direct commercial use of derivative work is strictly prohibited.
 
+using Code.UI.Services.BottomSlots.Interfaces;
+
 using Code.Core;
 using Code.Data.StaticData;
-using Code.Services.Interfaces;
 
 using R3;
 
 using Zenjex.Extensions.Lifecycle;
 
-namespace Code.Services
+namespace Code.UI.Services.BottomSlots
 {
   public class BottomSlotsService : IBottomSlotsService, IInitializable
   {
@@ -31,7 +32,7 @@ namespace Code.Services
       _slots = new InventoryItem[_bagConfig.BottomSlotCount];
     }
 
-    // ─── Query ────────────────────────────────────────────────────────────────
+    #region Query
 
     public InventoryItem GetSlot(int index) => _slots[index];
     public bool IsSlotEmpty(int index) => _slots[index] == null;
@@ -43,7 +44,9 @@ namespace Code.Services
       return -1;
     }
 
-    // ─── Placement ────────────────────────────────────────────────────────────
+    #endregion
+
+    #region Placement
 
     public bool TryPlace(InventoryItem item, int slotIndex)
     {
@@ -73,5 +76,7 @@ namespace Code.Services
       if (placedIndex < 0) return false;
       return TryPlace(item, placedIndex);
     }
+
+    #endregion
   }
 }

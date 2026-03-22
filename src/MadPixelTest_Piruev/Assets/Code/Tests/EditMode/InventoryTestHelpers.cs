@@ -16,7 +16,7 @@ namespace Code.Tests
   /// </summary>
   internal static class InventoryTestHelpers
   {
-    // ─── ItemConfig builders ─────────────────────────────────────────────────
+    #region ItemConfig builders
 
     /// <summary>1×1 item (single cell)</summary>
     public static ItemConfig Single(int level = 1, ItemConfig mergeResult = null)
@@ -70,7 +70,9 @@ namespace Code.Tests
       return cfg;
     }
 
-    // ─── GridInventory builder ────────────────────────────────────────────────
+    #endregion
+
+    #region GridInventory builder
 
     /// <summary>Creates a rectangular grid width×height.</summary>
     public static GridInventory MakeGrid(int width = 5, int height = 7)
@@ -89,6 +91,8 @@ namespace Code.Tests
       grid.TryPlace(item);
       return item;
     }
+
+    #endregion
   }
 
   /// <summary>

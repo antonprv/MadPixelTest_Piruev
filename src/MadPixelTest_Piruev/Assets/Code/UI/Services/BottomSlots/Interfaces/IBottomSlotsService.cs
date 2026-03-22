@@ -5,7 +5,7 @@ using Code.Core;
 
 using R3;
 
-namespace Code.Services.Interfaces
+namespace Code.UI.Services.BottomSlots.Interfaces
 {
   public interface IBottomSlotsService
   {

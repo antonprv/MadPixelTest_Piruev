@@ -1,9 +1,11 @@
 // Created by Anton Piruev in 2026. 
 // Any direct commercial use of derivative work is strictly prohibited.
 
+using Code.UI.Services.BottomSlots.Interfaces;
+using Code.UI.Services.DragDrop.Interfaces;
+
 using Code.Core;
 using Code.Infrastructure.AssetManagement;
-using Code.Services.Interfaces;
 using Code.UI.Types;
 
 using Cysharp.Threading.Tasks;
@@ -44,16 +46,18 @@ namespace Code.UI
     [Header("Animation")]
     [SerializeField] private float _bounceDuration = 0.15f;
 
-    // ─── Injected ─────────────────────────────────────────────────────────────
+    #region Injected
     [Zenjex] private IBottomSlotsService _slotsService;
     [Zenjex] private IGridDragDropService _dragDropService;
     [Zenjex] private DragIconView _dragIconView;
     [Zenjex] private IAssetLoader _assetLoader;
+    #endregion
 
-    // ─── State ────────────────────────────────────────────────────────────────
+    #region State
     private int _slotIndex;
+    #endregion
 
-    // ─── Init ─────────────────────────────────────────────────────────────────
+    #region Init
 
     public void Initialize(int slotIndex)
     {
@@ -61,7 +65,9 @@ namespace Code.UI
       RefreshView();
     }
 
-    // ─── View ─────────────────────────────────────────────────────────────────
+    #endregion
+
+    #region View
 
     public void RefreshView() => RefreshViewAsync().Forget();
 
@@ -79,7 +85,9 @@ namespace Code.UI
         _iconImage.sprite = await _assetLoader.LoadAsync<Sprite>(item.Config.Icon);
     }
 
-    // ─── IBeginDragHandler ────────────────────────────────────────────────────
+    #endregion
+
+    #region IBeginDragHandler
 
     public void OnBeginDrag(PointerEventData eventData)
     {
@@ -100,14 +108,18 @@ namespace Code.UI
         _dragIconView.Show(sprite, position);
     }
 
-    // ─── IDragHandler ─────────────────────────────────────────────────────────
+    #endregion
+
+    #region IDragHandler
 
     public void OnDrag(PointerEventData eventData)
     {
       _dragIconView.UpdatePosition(eventData.position);
     }
 
-    // ─── IEndDragHandler ─────────────────────────────────────────────────────
+    #endregion
+
+    #region IEndDragHandler
 
     public void OnEndDrag(PointerEventData eventData)
     {
@@ -121,7 +133,9 @@ namespace Code.UI
       }
     }
 
-    // ─── IDropHandler ─────────────────────────────────────────────────────────
+    #endregion
+
+    #region IDropHandler
 
     public void OnDrop(PointerEventData eventData)
     {
@@ -160,7 +174,9 @@ namespace Code.UI
       PlayBounce();
     }
 
-    // ─── Animation ────────────────────────────────────────────────────────────
+    #endregion
+
+    #region Animation
 
     private void PlayBounce()
     {
@@ -169,5 +185,7 @@ namespace Code.UI
         .scale(gameObject, Vector3.one, _bounceDuration)
         .setEaseOutBack();
     }
+
+    #endregion
   }
 }

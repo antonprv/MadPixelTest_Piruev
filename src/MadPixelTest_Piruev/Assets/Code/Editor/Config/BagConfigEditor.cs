@@ -2,6 +2,7 @@
 // Any direct commercial use of derivative work is strictly prohibited.
 
 using Code.Data.StaticData;
+using Code.Editor.Common;
 
 using UnityEditor;
 
@@ -13,14 +14,14 @@ namespace Code.Editor
   /// Inspector for BagConfig — shows bag shape preview.
   /// </summary>
   [CustomEditor(typeof(BagConfig))]
-  public class BagConfigEditor : UnityEditor.Editor
+  public class BagConfigEditor : ManualSaveEditor
   {
     private const int CellSize = 18;
     private const int CellPad = 2;
 
-    public override void OnInspectorGUI()
+    protected override void DrawInspector()
     {
-      DrawDefaultInspector();
+      DrawDefaultInspectorWithManualSave();
 
       EditorGUILayout.Space(8);
       EditorGUILayout.LabelField("Shape preview", EditorStyles.boldLabel);

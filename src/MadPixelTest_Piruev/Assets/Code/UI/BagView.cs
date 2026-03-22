@@ -3,8 +3,9 @@
 
 using System.Collections.Generic;
 
+using Code.UI.Services.Inventory.Interfaces;
+
 using Code.Data.StaticData;
-using Code.Services.Interfaces;
 using Code.UI.Types;
 
 using R3;
@@ -46,7 +47,7 @@ namespace Code.UI
       _disposables?.Dispose();
     }
 
-    // ─── Rebuild (runtime config hot-swap) ───────────────────────────────────
+    #region Rebuild (runtime config hot-swap)
 
     /// <summary>
     /// Rebuilds the grid from the new config.
@@ -62,7 +63,9 @@ namespace Code.UI
       RefreshAll();
     }
 
-    // ─── Grid spawn ───────────────────────────────────────────────────────────
+    #endregion
+
+    #region Grid spawn
 
     private void SpawnGrid()
     {
@@ -101,7 +104,9 @@ namespace Code.UI
         }
     }
 
-    // ─── Subscriptions ────────────────────────────────────────────────────────
+    #endregion
+
+    #region Subscriptions
 
     private void SubscribeToInventory()
     {
@@ -118,7 +123,9 @@ namespace Code.UI
         .AddTo(_disposables);
     }
 
-    // ─── Refresh ──────────────────────────────────────────────────────────────
+    #endregion
+
+    #region Refresh
 
     private void RefreshAll()
     {
@@ -144,7 +151,9 @@ namespace Code.UI
           LeanTween.scale(cell.gameObject, Vector3.one, 0.15f).setEaseInBack());
     }
 
-    // ─── Highlight API (called from CellView) ───────────────────────────────
+    #endregion
+
+    #region Highlight API (called from CellView)
 
     /// <summary>
     /// Highlights all item shape cells on placement by origin.
@@ -159,5 +168,7 @@ namespace Code.UI
           cv.SetHighlight(state);
       }
     }
+
+    #endregion
   }
 }

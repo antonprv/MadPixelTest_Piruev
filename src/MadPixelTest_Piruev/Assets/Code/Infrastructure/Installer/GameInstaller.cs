@@ -3,16 +3,20 @@
 
 using System.Collections;
 
-using Code.Infrastructure.Installer.Factory;
-
 using Code.Common.Extensions.Async;
+using Code.Common.Extensions.Logging;
 using Code.Infrastructure.AssetManagement;
 using Code.Infrastructure.AssetsPreloader;
+using Code.Infrastructure.Installer.Factory;
 using Code.Infrastructure.Loading;
+using Code.Infrastructure.SceneLoader;
 using Code.Infrastructure.Services.Time;
 using Code.Infrastructure.StateMachine;
 using Code.Infrastructure.StateMachine.Factory;
-using Code.Services;
+using Code.Infrastructure.StateMachine.States;
+using Code.UI.Services.BottomSlots;
+using Code.UI.Services.DragDrop;
+using Code.UI.Services.Inventory;
 
 using Reflex.Core;
 
@@ -56,15 +60,19 @@ namespace Code.Infrastructure.Installer
 
     #endregion
 
-    #region Main Bindings
+    #region Bindings
 
     public override void InstallBindings(ContainerBuilder builder)
     {
+      // Logging
+      BindLogging(builder);
+
       // Game State Machine
       BindGSM(builder);
 
       // Asset Management
       BindAssetManagement(builder);
+      BindSceneLoading(builder);
 
       // Gameplay Services
       BindGameplayServices(builder);
@@ -76,6 +84,13 @@ namespace Code.Infrastructure.Installer
     #endregion
 
     public override void LaunchGame() => _gameInstance.LaunchGame();
+
+    #region Logging
+
+    private void BindLogging(ContainerBuilder builder) =>
+      builder.Bind<IGameLog>().To<GameLogger>().AsSingle();
+
+    #endregion
 
     #region Game State Machine
 
@@ -101,6 +116,9 @@ namespace Code.Infrastructure.Installer
       builder.Bind<IAssetLoader>().To<AssetLoader>().AsSingle();
       builder.Bind<IAssetsPreloader>().To<AddressableAssetPreloader>().AsSingle();
     }
+
+    private void BindSceneLoading(ContainerBuilder builder) =>
+      builder.Bind<ISceneLoader>().To<AddressableSceneLoader>().AsSingle();
 
     #endregion
 

@@ -10,27 +10,31 @@ using R3;
 
 using UnityEngine;
 
-namespace Code.Services.Interfaces
+namespace Code.UI.Services.Inventory.Interfaces
 {
   public interface IGridInventoryService
   {
-    // ─── Events ───────────────────────────────────────────────────────────────
+    #region Events
     Observable<InventoryItem> OnItemPlaced { get; }
     Observable<InventoryItem> OnItemRemoved { get; }
     Observable<MergeResult> OnItemsMerged { get; }
+    #endregion
 
-    // ─── Placement ────────────────────────────────────────────────────────────
+    #region Placement
     bool CanPlace(ItemConfig config, Vector2Int origin, InventoryItem ignore = null);
     bool TryPlace(InventoryItem item);
     bool TryRemove(InventoryItem item);
+    #endregion
 
-    // ─── Query ────────────────────────────────────────────────────────────────
+    #region Query
     InventoryItem GetItemAt(Vector2Int cell);
     IReadOnlyList<InventoryItem> GetAllItems();
+    #endregion
 
-    // ─── Merge ────────────────────────────────────────────────────────────────
+    #region Merge
     bool CanMerge(InventoryItem dragged, Vector2Int targetCell, out InventoryItem targetItem);
     InventoryItem Merge(InventoryItem a, InventoryItem b);
+    #endregion
   }
 
   public readonly struct MergeResult

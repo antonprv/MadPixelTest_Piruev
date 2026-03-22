@@ -57,10 +57,8 @@ namespace Code.Editor.Common
       }
     }
 
-    protected void DrawDefaultInspectorWithManualSave()
-    {
+    protected void DrawDefaultInspectorWithManualSave() =>
       DrawDefaultInspector();
-    }
 
     private void DrawUnsavedWarning()
     {

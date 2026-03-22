@@ -25,12 +25,14 @@ namespace Code.Infrastructure.AssetManagement
     private readonly Dictionary<string, AsyncOperationHandle> _completedHandles = new();
     private readonly Dictionary<string, List<AsyncOperationHandle>> _calledHandles = new();
 
-    // ─── Init ─────────────────────────────────────────────────────────────────
+    #region Init
 
     public async UniTask InitializeAsync() =>
       await Addressables.InitializeAsync().ToUniTask();
 
-    // ─── Load by AssetReference ───────────────────────────────────────────────
+    #endregion
+
+    #region Load by AssetReference
 
     public async UniTask<T> LoadAsync<T>(AssetReference reference) where T : Object
     {
@@ -42,7 +44,9 @@ namespace Code.Infrastructure.AssetManagement
       return await RunWithCache(key, Addressables.LoadAssetAsync<T>(reference));
     }
 
-    // ─── Load by address string ───────────────────────────────────────────────
+    #endregion
+
+    #region Load by address string
 
     public async UniTask<T> LoadAsync<T>(string address) where T : Object
     {
@@ -52,7 +56,9 @@ namespace Code.Infrastructure.AssetManagement
       return await RunWithCache(address, Addressables.LoadAssetAsync<T>(address));
     }
 
-    // ─── Cleanup ──────────────────────────────────────────────────────────────
+    #endregion
+
+    #region Cleanup
 
     public void Cleanup()
     {
@@ -65,7 +71,9 @@ namespace Code.Infrastructure.AssetManagement
       _completedHandles.Clear();
     }
 
-    // ─── Helpers ──────────────────────────────────────────────────────────────
+    #endregion
+
+    #region Helpers
 
     private bool TryGetCached<T>(string key, out T result) where T : Object
     {
@@ -94,5 +102,7 @@ namespace Code.Infrastructure.AssetManagement
 
       return await op.ToUniTask();
     }
+
+    #endregion
   }
 }

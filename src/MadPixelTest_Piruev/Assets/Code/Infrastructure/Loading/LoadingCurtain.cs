@@ -22,44 +22,45 @@ namespace Code.Infrastructure.Loading
   /// </summary>
   public class LoadingCurtain : MonoBehaviour, ILoadScreen
   {
-    public CanvasGroup canvasGroup;
-    public Slider progressBar;
+    [SerializeField] private CanvasGroup _canvasGroup;
+    [SerializeField] private Slider _progressBar;
 
     [SerializeField] private float _fadeDuration = 0.35f;
 
     private void Awake()
     {
       DontDestroyOnLoad(gameObject);
-      canvasGroup.alpha = 0f;
-      canvasGroup.blocksRaycasts = false;
-      if (progressBar != null) progressBar.value = 0f;
+      _canvasGroup.alpha = 0f;
+      _canvasGroup.blocksRaycasts = false;
+      if (_progressBar != null) _progressBar.value = 0f;
     }
 
     #region ILoadingScreen
-
-    #endregion
 
     public void Show() => ShowAsync().Forget();
     public void Hide() => HideAsync().Forget();
 
     public void SetProgress(float value)
     {
-      if (progressBar != null)
-        progressBar.value = FMath.Clamp01(value);
+      if (_progressBar != null)
+        _progressBar.value = FMath.Clamp01(value);
     }
 
     public async UniTask ShowAsync()
     {
-      canvasGroup.blocksRaycasts = true;
+      _canvasGroup.blocksRaycasts = true;
       await FadeAsync(0f, 1f, _fadeDuration);
     }
 
     public async UniTask HideAsync()
     {
       await FadeAsync(1f, 0f, _fadeDuration);
-      canvasGroup.blocksRaycasts = false;
-      if (progressBar != null) progressBar.value = 0f;
+      _canvasGroup.blocksRaycasts = false;
+      if (_progressBar != null) _progressBar.value = 0f;
     }
+
+    #endregion
+
 
     #region Helpers
 
@@ -69,10 +70,10 @@ namespace Code.Infrastructure.Loading
       while (elapsed < duration)
       {
         elapsed += Time.unscaledDeltaTime;
-        canvasGroup.alpha = Mathf.Lerp(from, to, elapsed / duration);
+        _canvasGroup.alpha = FMath.Lerp(from, to, elapsed / duration);
         await UniTask.Yield(PlayerLoopTiming.Update);
       }
-      canvasGroup.alpha = to;
+      _canvasGroup.alpha = to;
     }
 
     #endregion

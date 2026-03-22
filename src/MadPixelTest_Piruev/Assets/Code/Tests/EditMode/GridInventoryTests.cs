@@ -27,9 +27,7 @@ namespace Code.Tests.EditMode
       _grid = InventoryTestHelpers.MakeGrid(5, 7);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Placement — basic cases
-    // ─────────────────────────────────────────────────────────────────────────
+    #region Placement — basic cases
 
     [Test]
     public void CanPlace_SingleCell_InBounds_ReturnsTrue()
@@ -89,9 +87,9 @@ namespace Code.Tests.EditMode
       Assert.IsFalse(_grid.TryPlace(item));
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Remove
-    // ─────────────────────────────────────────────────────────────────────────
+    #endregion
+
+    #region Remove
 
     [Test]
     public void TryRemove_PlacedItem_Succeeds_CellsBecomeEmpty()
@@ -125,9 +123,9 @@ namespace Code.Tests.EditMode
       Assert.IsTrue(_grid.TryPlace(item2));
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // GetItemAt / Items list
-    // ─────────────────────────────────────────────────────────────────────────
+    #endregion
+
+    #region GetItemAt / Items list
 
     [Test]
     public void GetItemAt_EmptyCell_ReturnsNull()
@@ -149,9 +147,9 @@ namespace Code.Tests.EditMode
       Assert.IsTrue(_grid.Items.Contains(item2));
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Merge
-    // ─────────────────────────────────────────────────────────────────────────
+    #endregion
+
+    #region Merge
 
     [Test]
     public void CanMerge_SameConfigWithMergeResult_ReturnsTrue()
@@ -235,9 +233,9 @@ namespace Code.Tests.EditMode
       Assert.IsTrue(_grid.Items.Contains(merged));
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // UpdateActiveCells (bag shape changes at runtime)
-    // ─────────────────────────────────────────────────────────────────────────
+    #endregion
+
+    #region UpdateActiveCells (bag shape changes at runtime)
 
     [Test]
     public void UpdateActiveCells_ItemInRemovedCell_IsEvicted()
@@ -295,9 +293,9 @@ namespace Code.Tests.EditMode
       Assert.AreSame(item, evicted[0]);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // IsCellActive / IsCellOccupied
-    // ─────────────────────────────────────────────────────────────────────────
+    #endregion
+
+    #region IsCellActive / IsCellOccupied
 
     [Test]
     public void IsCellActive_WithinBounds_IsTrue()
@@ -328,9 +326,9 @@ namespace Code.Tests.EditMode
       Assert.IsFalse(_grid.IsCellOccupied(new Vector2Int(2, 2)));
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Edge cases
-    // ─────────────────────────────────────────────────────────────────────────
+    #endregion
+
+    #region Edge cases
 
     [Test]
     public void CanPlace_WithIgnoredItem_IgnoredCellsAreFree()
@@ -371,5 +369,7 @@ namespace Code.Tests.EditMode
       Assert.AreSame(item, _grid.GetItemAt(new Vector2Int(0, 1)));
       Assert.AreSame(item, _grid.GetItemAt(new Vector2Int(1, 1)));
     }
+
+    #endregion
   }
 }

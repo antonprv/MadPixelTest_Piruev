@@ -1,13 +1,16 @@
 // Created by Anton Piruev in 2026.
 // Any direct commercial use of derivative work is strictly prohibited.
 
+using Code.UI.Services.BottomSlots.Interfaces;
+using Code.UI.Services.DragDrop.Interfaces;
+using Code.UI.Services.Inventory.Interfaces;
+
 using Code.Core;
-using Code.Services.Interfaces;
 using Code.UI.Types;
 
 using UnityEngine;
 
-namespace Code.Services
+namespace Code.UI.Services.DragDrop
 {
   /// <summary>
   /// Stores state of current drag operation.

@@ -33,7 +33,7 @@ namespace Code.Core
       _items = new List<InventoryItem>();
     }
 
-    // ─── Placement ────────────────────────────────────────────────────────────
+    #region Placement
 
     /// <summary>
     /// Checks if an item with config can be placed at origin.
@@ -69,17 +69,18 @@ namespace Code.Core
     /// <summary>Removes an item from the grid. Returns false if item not found.</summary>
     public bool TryRemove(InventoryItem item)
     {
-      if (!_items.Contains(item))
+      if (!_items.Remove(item))
         return false;
 
       foreach (var cell in item.GetOccupiedCells())
         _occupiedCells.Remove(cell);
 
-      _items.Remove(item);
       return true;
     }
 
-    // ─── Query ────────────────────────────────────────────────────────────────
+    #endregion
+
+    #region Query
 
     public InventoryItem GetItemAt(Vector2Int cell)
     {
@@ -92,7 +93,9 @@ namespace Code.Core
 
     public IReadOnlyCollection<Vector2Int> ActiveCells => _activeCells;
 
-    // ─── Merge ────────────────────────────────────────────────────────────────
+    #endregion
+
+    #region Merge
 
     /// <summary>
     /// Checks if dragged can be merged with item at targetOrigin.
@@ -131,7 +134,9 @@ namespace Code.Core
       return merged;
     }
 
-    // ─── Config hot-swap ──────────────────────────────────────────────────────
+    #endregion
+
+    #region Config hot-swap
 
     /// <summary>
     /// Updates bag shape at runtime.
@@ -162,5 +167,7 @@ namespace Code.Core
 
       return evicted;
     }
+
+    #endregion
   }
 }

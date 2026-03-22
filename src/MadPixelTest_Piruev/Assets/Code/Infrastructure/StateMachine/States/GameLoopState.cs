@@ -1,20 +1,21 @@
 // Created by Anton Piruev in 2026. 
 // Any direct commercial use of derivative work is strictly prohibited.
 
+using Code.Common.Extensions.Logging;
 using Code.Core;
 using Code.Infrastructure.StateMachine.States.Interfaces;
-using Code.Services.Interfaces;
+using Code.Infrastructure.StateMachine.States.Types;
+using Code.UI.Services.BottomSlots.Interfaces;
+using Code.UI.Services.Inventory.Interfaces;
 
 using Cysharp.Threading.Tasks;
 
 using R3;
 
-using UnityEngine;
-
-namespace Code.Infrastructure.StateMachine
+namespace Code.Infrastructure.StateMachine.States
 {
   /// <summary>
-  /// State 3 of 3 — active gameplay.
+  /// State 4 of 4 — active gameplay.
   ///
   /// Responsibilities:
   ///   1. R3 subscriptions to inventory events (log, extensible hooks)
@@ -33,16 +34,19 @@ namespace Code.Infrastructure.StateMachine
     public StateType Type => StateType.GameLoop;
 
     private readonly IGridInventoryService _inventoryService;
-    private readonly IBottomSlotsService _slotsService;
+    private readonly IBottomSlotsService   _slotsService;
+    private readonly IGameLog              _logger;
 
     private CompositeDisposable _disposables;
 
     public GameLoopState(
       IGridInventoryService inventoryService,
-      IBottomSlotsService slotsService)
+      IBottomSlotsService slotsService,
+      IGameLog logger)
     {
       _inventoryService = inventoryService;
       _slotsService = slotsService;
+      _logger = logger;
     }
 
     public void Enter()
@@ -57,11 +61,11 @@ namespace Code.Infrastructure.StateMachine
       _disposables = null;
     }
 
-    // ─── R3 subscriptions ─────────────────────────────────────────────────────
+    #region R3 Subcritption
 
     private void SubscribeToInventory()
     {
-      // Лог каждого размещения — легко заменить на Achievement-триггер, аналитику и т.д.
+      // Log for every placement
       _inventoryService.OnItemPlaced
         .Subscribe(item => OnItemPlaced(item))
         .AddTo(_disposables);
@@ -75,17 +79,23 @@ namespace Code.Infrastructure.StateMachine
         .AddTo(_disposables);
     }
 
-    // ─── Event handlers ───────────────────────────────────────────────────────
+    #endregion
+
+    #region Event handlers
     // Kept as virtual extension points:
     // in a real game these would be quest triggers, analytics, sound, etc.
 
     private void OnItemPlaced(InventoryItem item) =>
-      Debug.Log($"[GameLoop] Placed: {item.Config.ItemId} at {item.Origin}");
+      _logger.Log($"Placed: {item.Config.ItemId} at {item.Origin}");
 
     private void OnItemRemoved(InventoryItem item) =>
-      Debug.Log($"[GameLoop] Removed: {item.Config.ItemId}");
+      _logger.Log($"Removed: {item.Config.ItemId}");
 
     private void OnItemsMerged(MergeResult result) =>
-      Debug.Log($"[GameLoop] Merged → {result.Result.Config.ItemId} (Lv{result.Result.Config.Level})");
+      _logger.Log($"Merged → {result.Result.Config.ItemId} (Lv{result.Result.Config.Level})");
+
+    #endregion
+
+    
   }
 }

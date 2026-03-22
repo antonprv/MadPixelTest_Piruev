@@ -3,10 +3,13 @@
 
 using System;
 
+using Code.UI.Services.BottomSlots.Interfaces;
+using Code.UI.Services.DragDrop.Interfaces;
+using Code.UI.Services.Inventory.Interfaces;
+
 using Code.Core;
 using Code.Data.StaticData;
 using Code.Infrastructure.AssetManagement;
-using Code.Services.Interfaces;
 using Code.UI.Types;
 
 using Cysharp.Threading.Tasks;
@@ -54,21 +57,27 @@ namespace Code.UI
     [Header("Animation")]
     [SerializeField] private float _placeDuration = 0.12f;
 
-    // ─── Injected ─────────────────────────────────────────────────────────────
-    [Zenjex] private IGridInventoryService _inventoryService;
-    [Zenjex] private IBottomSlotsService _slotsService;
-    [Zenjex] private IGridDragDropService _dragDropService;
-    [Zenjex] private DragIconView _dragIconView;
-    [Zenjex] private IAssetLoader _assetLoader;
+    #region Injected
 
-    // ─── State ────────────────────────────────────────────────────────────────
+    [Zenjex] private readonly IGridInventoryService _inventoryService;
+    [Zenjex] private readonly IBottomSlotsService _slotsService;
+    [Zenjex] private readonly IGridDragDropService _dragDropService;
+    [Zenjex] private readonly DragIconView _dragIconView;
+    [Zenjex] private readonly IAssetLoader _assetLoader;
+
+    #endregion
+
+    #region State
+
     private Vector2Int _cellCoord;
-    private bool _isActive;
+    private bool _isActive; // currently not used
 
     // Callback to BagView for highlighting multiple cells at once
     private Action<ItemConfig, Vector2Int, HighlightState> _onHighlightRequest;
 
-    // ─── Init ─────────────────────────────────────────────────────────────────
+    #endregion
+
+    #region Init
 
     public void Initialize(
       Vector2Int coord,
@@ -89,7 +98,9 @@ namespace Code.UI
       RefreshView();
     }
 
-    // ─── View refresh ─────────────────────────────────────────────────────────
+    #endregion
+
+    #region View refresh 
 
     public void RefreshView() => RefreshViewAsync().Forget();
 
@@ -133,7 +144,9 @@ namespace Code.UI
       }
     }
 
-    // ─── IBeginDragHandler ────────────────────────────────────────────────────
+    #endregion
+
+    #region IBeginDragHandler
 
     public void OnBeginDrag(PointerEventData eventData)
     {
@@ -160,14 +173,18 @@ namespace Code.UI
         _dragIconView.Show(sprite, position);
     }
 
-    // ─── IDragHandler ─────────────────────────────────────────────────────────
+    #endregion
+
+    #region IDragHandler
 
     public void OnDrag(PointerEventData eventData)
     {
       _dragIconView.UpdatePosition(eventData.position);
     }
 
-    // ─── IEndDragHandler ─────────────────────────────────────────────────────
+    #endregion
+
+    #region IEndDragHandler
 
     public void OnEndDrag(PointerEventData eventData)
     {
@@ -192,7 +209,9 @@ namespace Code.UI
       RefreshView();
     }
 
-    // ─── IDropHandler ─────────────────────────────────────────────────────────
+    #endregion
+
+    #region IDropHandler
 
     public void OnDrop(PointerEventData eventData)
     {
@@ -228,7 +247,9 @@ namespace Code.UI
       RefreshView();
     }
 
-    // ─── IPointerEnterHandler / IPointerExitHandler ───────────────────────────
+    #endregion
+
+    #region IPointerEnterHandler / IPointerExitHandler
 
     public void OnPointerEnter(PointerEventData eventData)
     {
@@ -257,7 +278,9 @@ namespace Code.UI
       _onHighlightRequest?.Invoke(_dragDropService.DraggedItem.Config, targetOrigin, HighlightState.None);
     }
 
-    // ─── Animation ────────────────────────────────────────────────────────────
+    #endregion
+
+    #region Animation
 
     private void PlayPlaceAnimation(Vector2Int origin)
     {
@@ -269,5 +292,7 @@ namespace Code.UI
         .scale(gameObject, Vector3.one, _placeDuration)
         .setEaseOutBack();
     }
+
+    #endregion
   }
 }

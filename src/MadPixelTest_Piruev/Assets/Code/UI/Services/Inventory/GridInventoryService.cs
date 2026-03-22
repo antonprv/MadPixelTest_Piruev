@@ -3,9 +3,10 @@
 
 using System.Collections.Generic;
 
+using Code.UI.Services.Inventory.Interfaces;
+
 using Code.Core;
 using Code.Data.StaticData;
-using Code.Services.Interfaces;
 
 using R3;
 
@@ -13,11 +14,12 @@ using UnityEngine;
 
 using Zenjex.Extensions.Lifecycle;
 
-namespace Code.Services
+namespace Code.UI.Services.Inventory
 {
   public class GridInventoryService : IGridInventoryService, IInitializable
   {
-    // ─── Events ───────────────────────────────────────────────────────────────
+    #region Events
+
     private readonly Subject<InventoryItem> _onItemPlaced = new();
     private readonly Subject<InventoryItem> _onItemRemoved = new();
     private readonly Subject<MergeResult> _onItemsMerged = new();
@@ -26,7 +28,10 @@ namespace Code.Services
     public Observable<InventoryItem> OnItemRemoved => _onItemRemoved;
     public Observable<MergeResult> OnItemsMerged => _onItemsMerged;
 
-    // ─── Dependencies ─────────────────────────────────────────────────────────
+    #endregion
+
+    #region Dependencies
+
     private readonly BagConfig _bagConfig;
     private GridInventory _grid;
 
@@ -41,7 +46,9 @@ namespace Code.Services
       _grid = new GridInventory(_bagConfig.GetActiveCellsSet());
     }
 
-    // ─── Placement ────────────────────────────────────────────────────────────
+    #endregion
+
+    #region Placement
 
     public bool CanPlace(ItemConfig config, Vector2Int origin, InventoryItem ignore = null)
       => _grid.CanPlace(config, origin, ignore);
@@ -64,12 +71,16 @@ namespace Code.Services
       return true;
     }
 
-    // ─── Query ────────────────────────────────────────────────────────────────
+    #endregion
+
+    #region Query
 
     public InventoryItem GetItemAt(Vector2Int cell) => _grid.GetItemAt(cell);
     public IReadOnlyList<InventoryItem> GetAllItems() => _grid.Items;
 
-    // ─── Merge ────────────────────────────────────────────────────────────────
+    #endregion
+
+    #region Merge
 
     public bool CanMerge(InventoryItem dragged, Vector2Int targetCell, out InventoryItem targetItem)
       => _grid.CanMerge(dragged, targetCell, out targetItem);
@@ -80,5 +91,7 @@ namespace Code.Services
       _onItemsMerged.OnNext(new MergeResult(a, b, merged));
       return merged;
     }
+
+    #endregion
   }
 }

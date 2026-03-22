@@ -6,7 +6,7 @@ using Code.UI.Types;
 
 using UnityEngine;
 
-namespace Code.Services.Interfaces
+namespace Code.UI.Services.DragDrop.Interfaces
 {
   public interface IGridDragDropService
   {

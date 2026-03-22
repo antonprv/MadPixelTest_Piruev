@@ -3,9 +3,10 @@
 
 using System.Collections.Generic;
 
+using Code.UI.Services.BottomSlots.Interfaces;
+
 using Code.Core;
 using Code.Data.StaticData;
-using Code.Services.Interfaces;
 
 using UnityEngine;
 
@@ -15,13 +16,13 @@ using Zenjex.Extensions.Injector;
 namespace Code.Infrastructure
 {
   /// <summary>
-  /// Заполняет нижние слоты тестовыми предметами при старте.
-  /// Удали или отключи этот компонент перед сдачей, если не нужен.
+  /// Fills bottom slots with test items on startup.
+  /// Remove or disable this component before submission if not needed.
   ///
-  /// Использование:
-  ///   1. Добавь компонент на любой GameObject в сцене
-  ///   2. В инспекторе перетащи ItemConfig'и в список StartingItems
-  ///   3. При Play нижние слоты заполнятся предметами по порядку
+  /// Usage:
+  ///   1. Add this component to any GameObject in the scene
+  ///   2. In the inspector, drag ItemConfigs into the StartingItems list
+  ///   3. On Play, bottom slots will be filled with items in order
   /// </summary>
   public class TestDataSeeder : ZenjexBehaviour
   {
@@ -36,8 +37,8 @@ namespace Code.Infrastructure
         var config = _startingItems[i];
         if (config == null) continue;
 
-        // origin не важен для слотов — задаём нулевой,
-        // реальный origin назначается при размещении в сумке
+        // origin doesn't matter for slots — set to zero,
+        // actual origin is assigned when placed in bag
         var item = new InventoryItem(config, Vector2Int.zero);
 
         if (!_slotsService.TryPlace(item, i))

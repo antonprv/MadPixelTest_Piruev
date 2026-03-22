@@ -6,21 +6,23 @@ using System.Threading;
 
 using Code.Infrastructure.AssetsPreloader;
 using Code.Infrastructure.Loading;
+using Code.Infrastructure.SceneLoader;
 using Code.Infrastructure.StateMachine.States.Interfaces;
+using Code.Infrastructure.StateMachine.States.Types;
 
 using Cysharp.Threading.Tasks;
 
 using R3;
 
-namespace Code.Infrastructure.StateMachine
+namespace Code.Infrastructure.StateMachine.States
 {
   /// <summary>
-  /// State 2 of 3.
+  /// State 2 of 4.
   ///
   /// Responsibilities:
   ///   1. Parallel loading of all Addressable icons via IAssetsPreloader
   ///   2. Update progress bar on curtain (R3 Observable → SetProgress)
-  ///   3. After completion — hide curtain and transition to GameLoopState
+  ///   3. After completion — hide curtain and transition to LoadLevelState
   ///
   /// Progress pattern:
   ///   BagAssetsPreloader pushes float [0..1] to Subject<float>.
@@ -70,7 +72,7 @@ namespace Code.Infrastructure.StateMachine
 
       if (ct.IsCancellationRequested) return;
 
-      _gsm.Enter<GameLoopState>();
+      _gsm.Enter<LoadLevelState, string>(SceneAddresses.Main);
     }
 
     public void Exit()

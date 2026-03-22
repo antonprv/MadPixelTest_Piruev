@@ -5,7 +5,7 @@ namespace Code.Infrastructure.Installer.Addresses
 {
   public static class InstallerAddresses
   {
-    public static readonly string GameInstanceAddress = "GameInstance";
-    public static readonly string LoadingScreenAddress = "LoadingScreen";
+    public static readonly string GameInstanceAddress = "PA_GameInstance";
+    public static readonly string LoadingScreenAddress = "PUI_LoadingCurtain";
   }
 }

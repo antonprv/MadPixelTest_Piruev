@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: Shared_Piruev
+  m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
+  m_GroupName: Shared_Piruev
+  m_GUID: 6eada6d5d9b894d41b42f0189b6e9c9a
+  m_SerializeEntries:
+  - m_GUID: 116d425622b0b404cb0c8ba64cb936aa
+    m_Address: BagConfig
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Shared
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e0a7cabe2cb315843ad0f3703e793df4
+    m_Address: ItemManifest
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Shared
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 033c2b6f42734a1438bc376439547949, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: 16ad3bdc1bf40c14cb7f0d0fdad40f58, type: 2}
+    - {fileID: 11400000, guid: 8c79839c8dce5054881ab22ec9e4cc3c, type: 2}

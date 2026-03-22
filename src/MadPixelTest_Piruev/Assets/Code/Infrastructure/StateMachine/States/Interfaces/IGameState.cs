@@ -1,6 +1,8 @@
 // Created by Anton Piruev in 2026. 
 // Any direct commercial use of derivative work is strictly prohibited.
 
+using Code.Infrastructure.StateMachine.States.Types;
+
 namespace Code.Infrastructure.StateMachine.States.Interfaces
 {
   /// <summary>State without payload.</summary>

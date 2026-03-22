@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: Streaming_Levels_Piruev
+  m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
+  m_GroupName: Streaming_Levels_Piruev
+  m_GUID: 560c2ab45f294ca4c8340d3f54f01162
+  m_SerializeEntries:
+  - m_GUID: 8f0155b557feb7b4e8b12e060f833c7b
+    m_Address: Main
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Streaming_Level
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 033c2b6f42734a1438bc376439547949, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: f46d0b4965877b8478c4f0dfcd0a2b8a, type: 2}
+    - {fileID: 11400000, guid: 750232d5e3c3626409ca3ef408328141, type: 2}

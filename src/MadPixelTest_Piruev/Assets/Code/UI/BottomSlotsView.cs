@@ -3,8 +3,9 @@
 
 using System.Collections.Generic;
 
+using Code.UI.Services.BottomSlots.Interfaces;
+
 using Code.Data.StaticData;
-using Code.Services.Interfaces;
 
 using R3;
 

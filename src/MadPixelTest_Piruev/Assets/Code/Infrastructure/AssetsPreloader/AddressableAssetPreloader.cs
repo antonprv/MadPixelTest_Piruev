@@ -4,6 +4,7 @@
 using System;
 using System.Threading;
 
+using Code.Common.Extensions.Logging;
 using Code.Data.StaticData;
 using Code.Infrastructure.AssetManagement;
 
@@ -35,11 +36,17 @@ namespace Code.Infrastructure.AssetsPreloader
 
     private readonly ItemManifest _manifest;
     private readonly IAssetLoader _assetLoader;
+    private readonly IGameLog _logger;
 
-    public AddressableAssetPreloader(ItemManifest manifest, IAssetLoader assetLoader)
+    public AddressableAssetPreloader(
+      ItemManifest manifest,
+      IAssetLoader assetLoader,
+      IGameLog logger
+      )
     {
       _manifest = manifest;
       _assetLoader = assetLoader;
+      _logger = logger;
     }
 
     public async UniTask PreloadItemIconsAsync(IProgress<float> progress, CancellationToken ct)
@@ -81,7 +88,10 @@ namespace Code.Infrastructure.AssetsPreloader
       }
       catch (Exception e)
       {
-        Debug.LogError($"[BagAssetsPreloader] Failed to load icon for '{config.ItemId}': {e.Message}");
+        _logger.Log(
+          LogType.Error,
+          $"Failed to load icon for '{config.ItemId}': {e.Message}"
+          );
       }
       finally
       {
