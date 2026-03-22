@@ -17,39 +17,36 @@ namespace Code.Presenter.DragDrop
   /// <summary>
   /// Central MVP Presenter for drag-drop.
   ///
-  /// All logic that previously lived in CellView.OnBeginDrag / OnDrop / OnEndDrag
-  /// and in BottomSlotView.OnBeginDrag / OnDrop / OnEndDrag now lives here.
-  ///
-  /// Views become dumb: they forward raw Unity input events → this Presenter decides.
-  ///
-  /// Dependency chain (read-only):
-  ///   DragDropPresenter
-  ///     ├─ IBagPresenter        (for inventory operations + highlight requests)
-  ///     ├─ IBottomSlotsPresenter (for slot operations)
-  ///     ├─ IGridDragDropService  (for drag state tracking)
-  ///     ├─ IDragIconViewModel    (to show/hide the floating drag icon)
-  ///     └─ IAssetLoader         (to load icon sprites async)
+  /// Highlight fix:
+  ///   Stores _lastHighlightOrigin so that HandlePointerEnterCell always clears
+  ///   the previous shape highlight before applying the new one. This prevents
+  ///   "ghost" highlights when the pointer moves quickly between cells without
+  ///   triggering PointerExit on every intermediate cell.
   /// </summary>
   public class DragDropPresenter : IDragDropPresenter
   {
-    private readonly IBagPresenter _bagPresenter;
+    private readonly IBagPresenter         _bagPresenter;
     private readonly IBottomSlotsPresenter _slotsPresenter;
-    private readonly IGridDragDropService _dragDropService;
-    private readonly IDragIconViewModel _dragIconViewModel;
-    private readonly IAssetLoader _assetLoader;
+    private readonly IGridDragDropService  _dragDropService;
+    private readonly IDragIconViewModel    _dragIconViewModel;
+    private readonly IAssetLoader          _assetLoader;
+
+    // Tracks the last origin we highlighted so we can always clear it cleanly
+    private Vector2Int? _lastHighlightOrigin;
+    private bool        _lastHighlightWasSet;
 
     public DragDropPresenter(
-      IBagPresenter bagPresenter,
+      IBagPresenter         bagPresenter,
       IBottomSlotsPresenter slotsPresenter,
-      IGridDragDropService dragDropService,
-      IDragIconViewModel dragIconViewModel,
-      IAssetLoader assetLoader)
+      IGridDragDropService  dragDropService,
+      IDragIconViewModel    dragIconViewModel,
+      IAssetLoader          assetLoader)
     {
-      _bagPresenter = bagPresenter;
-      _slotsPresenter = slotsPresenter;
-      _dragDropService = dragDropService;
+      _bagPresenter      = bagPresenter;
+      _slotsPresenter    = slotsPresenter;
+      _dragDropService   = dragDropService;
       _dragIconViewModel = dragIconViewModel;
-      _assetLoader = assetLoader;
+      _assetLoader       = assetLoader;
     }
 
     #region Start
@@ -86,24 +83,22 @@ namespace Code.Presenter.DragDrop
       if (_dragDropService.IsDragging && sprite != null)
         _dragIconViewModel.Show(sprite, screenPosition);
     }
+
     #endregion
 
     #region Move
 
-    public void UpdateDragPosition(Vector2 screenPosition)
-      => _dragIconViewModel.UpdatePosition(screenPosition);
+    public void UpdateDragPosition(Vector2 screenPosition) =>
+      _dragIconViewModel.UpdatePosition(screenPosition);
+
     #endregion
 
-    #region End
+    #region End — void drop
 
-    /// <summary>
-    /// Drop in void — behaviour differs by source:
-    ///   Bag source   → try first free slot, else return to bag (CancelDrag)
-    ///   Slot source  → always return to source slot (CancelDrag)
-    /// </summary>
     public void HandleEndDrag()
     {
       _dragIconViewModel.Hide();
+      ClearLastHighlight();
 
       if (!_dragDropService.IsDragging) return;
 
@@ -115,23 +110,26 @@ namespace Code.Presenter.DragDrop
         else
           _dragDropService.CancelDrag();
       }
-      else // BottomSlot
+      else
       {
         _dragDropService.CancelDrag();
       }
     }
+
     #endregion
 
     #region Drop on cell
 
     public void HandleDropOnCell(Vector2Int cellCoord)
     {
+      _dragIconViewModel.Hide();
+      ClearLastHighlight();
+
       if (!_dragDropService.IsDragging) return;
 
-      var dragged = _dragDropService.DraggedItem;
+      var dragged      = _dragDropService.DraggedItem;
       var targetOrigin = cellCoord - _dragDropService.DragOffset;
 
-      // 1. Merge?
       if (_bagPresenter.CanMerge(dragged, cellCoord, out var targetItem))
       {
         _bagPresenter.Merge(dragged, targetItem);
@@ -139,7 +137,6 @@ namespace Code.Presenter.DragDrop
         return;
       }
 
-      // 2. Place?
       dragged.SetOrigin(targetOrigin);
       if (_bagPresenter.TryPlace(dragged))
       {
@@ -147,43 +144,53 @@ namespace Code.Presenter.DragDrop
         return;
       }
 
-      // 3. Failed → return to source
       _dragDropService.CancelDrag();
     }
+
     #endregion
 
     #region Drop on slot
 
     public void HandleDropOnSlot(int slotIndex)
     {
+      _dragIconViewModel.Hide();
+
       if (!_dragDropService.IsDragging) return;
 
-      var dragged = _dragDropService.DraggedItem;
+      var dragged     = _dragDropService.DraggedItem;
       var currentItem = _slotsPresenter.GetSlot(slotIndex);
 
       if (currentItem == null)
       {
         _slotsPresenter.TryPlace(dragged, slotIndex);
         _dragDropService.EndDrag();
+        return;
+      }
+
+      _slotsPresenter.TryRemove(slotIndex, out var displaced);
+
+      int  sourceSlot   = _dragDropService.SourceSlotIndex;
+      bool swapPossible = _dragDropService.Source == DragSource.BottomSlot
+                          && sourceSlot >= 0
+                          && _slotsPresenter.TryPlace(displaced, sourceSlot);
+
+      if (swapPossible)
+      {
+        _slotsPresenter.TryPlace(dragged, slotIndex);
+        _dragDropService.EndDrag();
+      }
+      else if (_slotsPresenter.TryPlaceInFirstFreeSlot(displaced, out _))
+      {
+        _slotsPresenter.TryPlace(dragged, slotIndex);
+        _dragDropService.EndDrag();
       }
       else
       {
-        // Try swap: displace old item to any free slot
-        _slotsPresenter.TryRemove(slotIndex, out var displaced);
-
-        if (_slotsPresenter.TryPlaceInFirstFreeSlot(displaced, out _))
-        {
-          _slotsPresenter.TryPlace(dragged, slotIndex);
-          _dragDropService.EndDrag();
-        }
-        else
-        {
-          // No free slot — return displaced, cancel drag
-          _slotsPresenter.TryPlace(displaced, slotIndex);
-          _dragDropService.CancelDrag();
-        }
+        _slotsPresenter.TryPlace(displaced, slotIndex);
+        _dragDropService.CancelDrag();
       }
     }
+
     #endregion
 
     #region Highlight
@@ -192,8 +199,12 @@ namespace Code.Presenter.DragDrop
     {
       if (!_dragDropService.IsDragging) return;
 
-      var dragged = _dragDropService.DraggedItem;
+      var dragged      = _dragDropService.DraggedItem;
       var targetOrigin = cellCoord - _dragDropService.DragOffset;
+
+      // Always clear the previous highlight first to avoid ghost highlights
+      // when the pointer moves quickly across cells
+      ClearLastHighlight();
 
       HighlightState state;
 
@@ -205,18 +216,38 @@ namespace Code.Presenter.DragDrop
         state = HighlightState.Invalid;
 
       _bagPresenter.RequestHighlight(dragged.Config, targetOrigin, state);
+
+      // Remember what we highlighted so we can clear it on the next Enter or drag end
+      _lastHighlightOrigin = targetOrigin;
+      _lastHighlightWasSet  = true;
     }
 
     public void HandlePointerExitCell(Vector2Int cellCoord)
     {
       if (!_dragDropService.IsDragging) return;
 
-      var targetOrigin = cellCoord - _dragDropService.DragOffset;
-      _bagPresenter.RequestHighlight(
-        _dragDropService.DraggedItem.Config,
-        targetOrigin,
-        HighlightState.None);
+      // Clear by explicit exit coord as a fallback; ClearLastHighlight handles
+      // the normal case via the tracked origin
+      ClearLastHighlight();
     }
+
+    /// <summary>Clears the highlight shape we last painted, if any.</summary>
+    private void ClearLastHighlight()
+    {
+      if (!_lastHighlightWasSet || !_dragDropService.IsDragging) return;
+
+      var dragged = _dragDropService.DraggedItem;
+      if (dragged == null) return;
+
+      _bagPresenter.RequestHighlight(
+        dragged.Config,
+        _lastHighlightOrigin!.Value,
+        HighlightState.None);
+
+      _lastHighlightWasSet  = false;
+      _lastHighlightOrigin  = null;
+    }
+
     #endregion
   }
 }

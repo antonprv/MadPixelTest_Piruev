@@ -21,7 +21,7 @@ MonoBehaviour:
       Culture=neutral, PublicKeyToken=null
     m_SubObjectGUID: 
     m_EditorAssetChanged: 1
-  <ItemColor>k__BackingField: {r: 0.26666668, g: 0.6666667, b: 0.4, a: 1}
+  <ItemColor>k__BackingField: {r: 1, g: 1, b: 1, a: 1}
   <Shape>k__BackingField:
   - {x: 0, y: 0}
   - {x: 0, y: 1}

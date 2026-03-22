@@ -20,9 +20,11 @@ using Code.Infrastructure.StateMachine.States;
 using Code.Model.Services.BottomSlots;
 using Code.Model.Services.DragDrop;
 using Code.Model.Services.Inventory;
+using Code.Model.Services.Startup;
 using Code.Presenter.Bag;
 using Code.Presenter.BottomSlots;
 using Code.Presenter.DragDrop;
+using Code.UI.Factory;
 using Code.ViewModel.Bag;
 using Code.ViewModel.BottomSlots;
 using Code.ViewModel.DragIcon;
@@ -42,7 +44,8 @@ namespace Code.Infrastructure.Installer
   ///   3. Domain services     (Model / domain)
   ///   4. MVP Presenters      (mediation layer)
   ///   5. MVVM ViewModels     (UI state layer)
-  ///   6. GSM                 (game state machine)
+  ///   6. UI Factory
+  ///   7. GSM                 (game state machine)
   /// </summary>
   public class GameInstaller : ProjectRootInstaller
   {
@@ -82,6 +85,7 @@ namespace Code.Infrastructure.Installer
       BindDomainServices(builder);
       BindPresenters(builder);
       BindViewModels(builder);
+      BindUI(builder);
       BindGSM(builder);
     }
 
@@ -110,11 +114,8 @@ namespace Code.Infrastructure.Installer
 
     private void BindStaticData(ContainerBuilder builder)
     {
-      // Subservices — each knows how to load one piece of data
       builder.Bind<IBagConfigSubservice>().To<BagConfigSubservice>().AsSingle();
       builder.Bind<IItemDataSubservice>().To<ItemDataSubservice>().AsSingle();
-
-      // Aggregator — entry point for the state machine
       builder.Bind<IStaticDataService>().To<StaticDataService>().AsSingle();
     }
 
@@ -125,16 +126,18 @@ namespace Code.Infrastructure.Installer
     private void BindDomainServices(ContainerBuilder builder)
     {
       builder.Bind<GridInventoryService>()
-        .BindInterfacesAndSelf()   // → IGridInventoryService + IInitializable
+        .BindInterfacesAndSelf()
         .AsSingle();
 
       builder.Bind<BottomSlotsService>()
-        .BindInterfacesAndSelf()   // → IBottomSlotsService + IInitializable
+        .BindInterfacesAndSelf()
         .AsSingle();
 
       builder.Bind<GridDragDropService>()
-        .BindInterfacesAndSelf()   // → IGridDragDropService
+        .BindInterfacesAndSelf()
         .AsSingle();
+
+      builder.Bind<IStartupItemsService>().To<StartupItemsService>().AsSingle();
     }
 
     #endregion
@@ -154,10 +157,19 @@ namespace Code.Infrastructure.Installer
 
     private void BindViewModels(ContainerBuilder builder)
     {
+      // ViewModels are resolved lazily by UIFactory via Container.Resolve<T>(),
+      // so they are created only after InitializeModelServices() in LoadLevelState.
       builder.Bind<IDragIconViewModel>().To<DragIconViewModel>().AsSingle();
       builder.Bind<IBagViewModel>().To<BagViewModel>().AsSingle();
       builder.Bind<IBottomSlotsViewModel>().To<BottomSlotsViewModel>().AsSingle();
     }
+
+    #endregion
+
+    #region UI
+
+    private void BindUI(ContainerBuilder builder) =>
+      builder.Bind<IUIFactory>().To<UIFactory>().AsSingle();
 
     #endregion
 

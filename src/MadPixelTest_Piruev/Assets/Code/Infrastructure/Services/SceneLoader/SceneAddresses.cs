@@ -17,12 +17,12 @@ namespace Code.Infrastructure.SceneLoader
     /// <summary>
     /// Initial empty scene for bootstrap
     /// </summary>
-    public const string Initial = "Initial";
+    public const string InitialAddress = "Initial";
 
     /// <summary>
     /// Main gameplay scene — bag inventory lives here.
     /// All gameplay happens in this scene.
     /// </summary>
-    public const string Main = "Main";
+    public const string MainAddress = "Main";
   }
 }

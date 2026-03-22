@@ -6,41 +6,52 @@ using System.Threading;
 using Code.Infrastructure.SceneLoader;
 using Code.Infrastructure.StateMachine.States.Interfaces;
 using Code.Infrastructure.StateMachine.States.Types;
+using Code.Model.Services.BottomSlots.Interfaces;
+using Code.Model.Services.Inventory.Interfaces;
+using Code.UI.Factory;
 
 using Cysharp.Threading.Tasks;
 
 namespace Code.Infrastructure.StateMachine.States
 {
   /// <summary>
-  /// State 3 of 4 — loads the Main scene via Addressables.
+  /// State 3 of 4.
   ///
-  /// Responsibilities:
-  ///   1. Load "Main" scene (curtain is already visible from PreloadAssetsState)
-  ///   2. Transition to GameLoopState
-  ///
-  /// Why a separate state instead of doing this in PreloadAssetsState:
-  ///   Single-responsibility — PreloadAssets owns asset preloading + curtain hide.
-  ///   This state owns scene loading. Each state is independently testable
-  ///   and can be re-entered (e.g. if we add level restart later).
-  ///
-  /// Why not load the scene in BootstrapState:
-  ///   Scene load must complete after asset preloading — the scene's MonoBehaviours
-  ///   (BagView, CellView, etc.) are instantiated by Unity after the scene activates.
-  ///   Preloading icons before the scene exists would waste work.
+  /// Exact order matters:
+  ///   1. InitializeModelServices() — grid and slots arrays are allocated.
+  ///      Must be first: ViewModels read from services the moment they are created.
+  ///   2. LoadAsync() — loads the Main scene. Scene Awake() fires here,
+  ///      but BagView / BottomSlotsView / DragIconView are plain MonoBehaviours
+  ///      with empty Awake — they wait for Construct().
+  ///   3. CreateGameplayUIAsync() — factory loads BagCanvas from Addressables,
+  ///      instantiates it, then calls Construct(viewModel) on each View.
+  ///      At this point services are ready, so ViewModel constructors are safe.
+  ///   4. GameLoopState.
   /// </summary>
   public class LoadLevelState : IGamePayloadedState<string>
   {
     public StateType Type => StateType.LoadLevel;
 
-    private readonly IGameStateMachine _gsm;
-    private readonly ISceneLoader _sceneLoader;
+    private readonly IGameStateMachine    _gsm;
+    private readonly ISceneLoader         _sceneLoader;
+    private readonly IGridInventoryService _gridInventory;
+    private readonly IBottomSlotsService   _bottomSlots;
+    private readonly IUIFactory           _uiFactory;
 
     private CancellationTokenSource _cts;
 
-    public LoadLevelState(IGameStateMachine gsm, ISceneLoader sceneLoader)
+    public LoadLevelState(
+      IGameStateMachine     gsm,
+      ISceneLoader          sceneLoader,
+      IGridInventoryService gridInventory,
+      IBottomSlotsService   bottomSlots,
+      IUIFactory            uiFactory)
     {
-      _gsm = gsm;
-      _sceneLoader = sceneLoader;
+      _gsm           = gsm;
+      _sceneLoader   = sceneLoader;
+      _gridInventory = gridInventory;
+      _bottomSlots   = bottomSlots;
+      _uiFactory     = uiFactory;
     }
 
     public void Enter(string payload) => EnterAsync(payload).Forget();
@@ -50,11 +61,27 @@ namespace Code.Infrastructure.StateMachine.States
       _cts = new CancellationTokenSource();
       var ct = _cts.Token;
 
+      // 1. Initialize domain services before anything touches them
+      InitializeModelServices();
+
+      // 2. Load the scene — Views Awake() fires here but does nothing
+      //    (no ZenjexBehaviour, no [Zenjex] fields, empty MonoBehaviour)
       await _sceneLoader.LoadAsync(payload, ct);
 
       if (ct.IsCancellationRequested) return;
 
+      // 3. Create and wire UI — safe because services are already initialized
+      await _uiFactory.CreateGameplayUIAsync();
+
+      if (ct.IsCancellationRequested) return;
+
       _gsm.Enter<GameLoopState>();
+    }
+
+    private void InitializeModelServices()
+    {
+      _gridInventory.Initialize();
+      _bottomSlots.Initialize();
     }
 
     public void Exit()

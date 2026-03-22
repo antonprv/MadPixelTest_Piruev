@@ -3,7 +3,6 @@
 
 using Reflex.Core;
 
-using Zenjex.Extensions.Core;
 using Zenjex.Extensions.SceneContext;
 
 namespace Code.Infrastructure.Installer

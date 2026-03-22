@@ -42,7 +42,7 @@ namespace Code.Infrastructure.Installer.Factory
     public static IEnumerator CreateLoadingScreenRoutine(Action<ILoadScreen> onComplete)
     {
       _loadingScreenHandle =
-          Addressables.LoadAssetAsync<GameObject>(InstallerAddresses.LoadingScreenAddress);
+          Addressables.LoadAssetAsync<GameObject>(InstallerAddresses.LoadingCurtainAddress);
 
       yield return _loadingScreenHandle;
 

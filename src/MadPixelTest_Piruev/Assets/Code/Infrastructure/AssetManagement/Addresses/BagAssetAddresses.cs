@@ -9,13 +9,19 @@ namespace Code.Infrastructure.AssetManagement
   /// </summary>
   public static class BagAssetAddresses
   {
-    // ── UI ────────────────────────────────────────────────────────────────────
-    public const string LoadingCurtain = "UI/LoadingCurtain";
-    public const string BagCanvas = "UI/BagCanvas";
+    #region UI
 
-    // ── Items (label for batch loading) ───────────────────────────────────────
+    public const string BagCanvasAddress = "PUI_BagCanvas";
+
+    #endregion
+
+    #region Items (label for batch loading)
+
     // All item icons are tagged with "ItemIcon" label in Addressables Groups.
     // AssetsPreloader loads them all in one call via this label.
-    public const string ItemIconLabel = "ItemIcon";
+    public const string ItemIconLabel = "Preload_UI";
+
+    #endregion
+
   }
 }

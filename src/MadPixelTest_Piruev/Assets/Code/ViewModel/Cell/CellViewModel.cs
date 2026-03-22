@@ -7,8 +7,6 @@ using Code.Presenter.Bag;
 using Code.Presenter.DragDrop;
 using Code.UI.Types;
 
-using Cysharp.Threading.Tasks;
-
 using R3;
 
 using UnityEngine;
@@ -17,16 +15,22 @@ namespace Code.ViewModel.Cell
 {
   public interface ICellViewModel
   {
-    #region Observable state (View binds to these)
+    #region Observable state
 
+    /// <summary>Always the neutral empty-cell color.</summary>
     ReadOnlyReactiveProperty<Color> BackgroundColor { get; }
-    ReadOnlyReactiveProperty<Sprite> Icon { get; }
-    ReadOnlyReactiveProperty<bool> IconVisible { get; }
+
+    /// <summary>
+    /// Color of the item overlay (colored square on top of background).
+    /// Color.clear when empty, item.Config.ItemColor when occupied.
+    /// </summary>
+    ReadOnlyReactiveProperty<Color> ItemOverlayColor { get; }
+
     ReadOnlyReactiveProperty<HighlightState> Highlight { get; }
 
     #endregion
 
-    #region Commands (View forwards Unity input events here)
+    #region Commands
 
     void OnBeginDrag(Vector2 screenPosition);
     void OnDrag(Vector2 screenPosition);
@@ -37,138 +41,90 @@ namespace Code.ViewModel.Cell
 
     #endregion
 
-    #region Called by BagViewModel to set highlight from HighlightRequest
-
     void SetHighlight(HighlightState state);
-
-    #endregion
-
     void Dispose();
   }
 
   /// <summary>
   /// MVVM ViewModel for a single inventory grid cell.
   ///
-  /// Owns all visual state as ReactiveProperties.
-  /// Delegates input commands to DragDropPresenter.
-  /// Refreshes state by querying IBagPresenter when inventory events fire.
+  /// Icon (sprite) is no longer managed here — BagView creates a single
+  /// full-bounding-box Image per item that covers all its cells correctly.
   ///
-  /// Lifecycle: created by BagViewModel, disposed by BagViewModel.
-  /// Never registered in DI — created via new CellViewModel(...).
+  /// This VM only owns:
+  ///   - BackgroundColor  — neutral, never changes
+  ///   - ItemOverlayColor — item tint color, transparent when empty
+  ///   - Highlight        — drag-hover state
   /// </summary>
   public class CellViewModel : ICellViewModel
   {
-    private readonly Vector2Int _coord;
-    private readonly IBagPresenter _bagPresenter;
+    private readonly Vector2Int         _coord;
+    private readonly IBagPresenter      _bagPresenter;
     private readonly IDragDropPresenter _dragDropPresenter;
-    private readonly IAssetLoader _assetLoader;
 
-    #region State
+    private readonly ReactiveProperty<Color>          _backgroundColor;
+    private readonly ReactiveProperty<Color>          _itemOverlayColor = new(Color.clear);
+    private readonly ReactiveProperty<HighlightState> _highlight        = new(HighlightState.None);
 
-    private readonly ReactiveProperty<Color> _backgroundColor;
-    private readonly ReactiveProperty<Sprite> _icon = new(null);
-    private readonly ReactiveProperty<bool> _iconVisible = new(false);
-    private readonly ReactiveProperty<HighlightState> _highlight = new(HighlightState.None);
-
-    #endregion
-
-    public ReadOnlyReactiveProperty<Color> BackgroundColor => _backgroundColor;
-    public ReadOnlyReactiveProperty<Sprite> Icon => _icon;
-    public ReadOnlyReactiveProperty<bool> IconVisible => _iconVisible;
-    public ReadOnlyReactiveProperty<HighlightState> Highlight => _highlight;
+    public ReadOnlyReactiveProperty<Color>          BackgroundColor  => _backgroundColor;
+    public ReadOnlyReactiveProperty<Color>          ItemOverlayColor => _itemOverlayColor;
+    public ReadOnlyReactiveProperty<HighlightState> Highlight        => _highlight;
 
     private readonly CompositeDisposable _disposables = new();
-
-    // Inspector-configurable defaults exposed via ctor so BagViewModel can pass them
-    private readonly Color _emptyColor;
+    private readonly Color               _emptyColor;
 
     public CellViewModel(
-      Vector2Int coord,
-      IBagPresenter bagPresenter,
+      Vector2Int         coord,
+      IBagPresenter      bagPresenter,
       IDragDropPresenter dragDropPresenter,
-      IAssetLoader assetLoader,
-      Color emptyColor)
+      IAssetLoader       assetLoader,       // kept for interface compatibility
+      Color              emptyColor)
     {
-      _coord = coord;
-      _bagPresenter = bagPresenter;
+      _coord             = coord;
+      _bagPresenter      = bagPresenter;
       _dragDropPresenter = dragDropPresenter;
-      _assetLoader = assetLoader;
-      _emptyColor = emptyColor;
+      _emptyColor        = emptyColor;
 
       _backgroundColor = new ReactiveProperty<Color>(emptyColor);
 
-      // Subscribe to inventory events → refresh this cell's visual state
-      _bagPresenter.OnItemPlaced
-        .Subscribe(_ => Refresh())
-        .AddTo(_disposables);
-
-      _bagPresenter.OnItemRemoved
-        .Subscribe(_ => Refresh())
-        .AddTo(_disposables);
-
-      _bagPresenter.OnItemsMerged
-        .Subscribe(_ => Refresh())
-        .AddTo(_disposables);
+      _bagPresenter.OnItemPlaced .Subscribe(_ => Refresh()).AddTo(_disposables);
+      _bagPresenter.OnItemRemoved.Subscribe(_ => Refresh()).AddTo(_disposables);
+      _bagPresenter.OnItemsMerged.Subscribe(_ => Refresh()).AddTo(_disposables);
 
       Refresh();
     }
 
-    #region Refresh
-
-    /// <summary>
-    /// Synchronously updates background color and icon visibility.
-    /// Icon asset loading is fire-and-forget async — it doesn't block
-    /// reactive property updates that tests need to observe immediately.
-    /// </summary>
     private void Refresh()
     {
-      var item = _bagPresenter.GetItemAt(_coord);
+      var item    = _bagPresenter.GetItemAt(_coord);
       bool isEmpty = item == null;
-
-      _backgroundColor.Value = isEmpty ? _emptyColor : item.Config.ItemColor;
-
-      bool isOrigin = !isEmpty && item.Origin == _coord;
-      _iconVisible.Value = isOrigin;
-
-      if (!isOrigin)
-        _icon.Value = null;
-      else if (item.Config.Icon != null)
-        LoadIconAsync(item).Forget();
+      _itemOverlayColor.Value = isEmpty ? Color.clear : item.Config.ItemColor;
     }
-
-    private async UniTaskVoid LoadIconAsync(InventoryItem item) =>
-      _icon.Value = await _assetLoader.LoadAsync<Sprite>(item.Config.Icon);
-
-    #endregion
 
     #region Commands
 
-    public void OnBeginDrag(Vector2 screenPosition)
-      => _dragDropPresenter.StartDragFromBag(_coord, screenPosition);
+    public void OnBeginDrag(Vector2 screenPosition) =>
+      _dragDropPresenter.StartDragFromBag(_coord, screenPosition);
 
-    public void OnDrag(Vector2 screenPosition)
-      => _dragDropPresenter.UpdateDragPosition(screenPosition);
+    public void OnDrag(Vector2 screenPosition) =>
+      _dragDropPresenter.UpdateDragPosition(screenPosition);
 
-    public void OnEndDrag()
-      => _dragDropPresenter.HandleEndDrag();
+    public void OnEndDrag() =>
+      _dragDropPresenter.HandleEndDrag();
 
-    public void OnDrop()
-      => _dragDropPresenter.HandleDropOnCell(_coord);
+    public void OnDrop() =>
+      _dragDropPresenter.HandleDropOnCell(_coord);
 
-    public void OnPointerEnter()
-      => _dragDropPresenter.HandlePointerEnterCell(_coord);
+    public void OnPointerEnter() =>
+      _dragDropPresenter.HandlePointerEnterCell(_coord);
 
-    public void OnPointerExit()
-      => _dragDropPresenter.HandlePointerExitCell(_coord);
-
-    #endregion
-
-    #region Highlight (set externally by BagViewModel)
-
-    public void SetHighlight(HighlightState state)
-      => _highlight.Value = state;
+    public void OnPointerExit() =>
+      _dragDropPresenter.HandlePointerExitCell(_coord);
 
     #endregion
+
+    public void SetHighlight(HighlightState state) =>
+      _highlight.Value = state;
 
     public void Dispose() => _disposables.Dispose();
   }

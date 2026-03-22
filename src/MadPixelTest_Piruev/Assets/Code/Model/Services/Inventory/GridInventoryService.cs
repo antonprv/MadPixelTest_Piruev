@@ -12,11 +12,9 @@ using R3;
 
 using UnityEngine;
 
-using Zenjex.Extensions.Lifecycle;
-
 namespace Code.Model.Services.Inventory
 {
-  public class GridInventoryService : IGridInventoryService, IInitializable
+  public class GridInventoryService : IGridInventoryService
   {
     #region Events
 
@@ -38,7 +36,6 @@ namespace Code.Model.Services.Inventory
     public GridInventoryService(IBagConfigSubservice bagConfig) =>
       _bagConfig = bagConfig;
 
-    // IInitializable — called by Zenjex after container assembly
     public void Initialize() =>
       _grid = new GridInventory(_bagConfig.GetActiveCellsSet());
 

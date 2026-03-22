@@ -66,7 +66,7 @@ namespace Code.Infrastructure.StateMachine.States
 
       if (ct.IsCancellationRequested) return;
 
-      await _sceneLoader.LoadAsync(SceneAddresses.Initial, ct);
+      await _sceneLoader.LoadAsync(SceneAddresses.InitialAddress, ct);
 
       if (ct.IsCancellationRequested) return;
 

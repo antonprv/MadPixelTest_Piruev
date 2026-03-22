@@ -7,11 +7,9 @@ using Code.Model.Services.BottomSlots.Interfaces;
 
 using R3;
 
-using Zenjex.Extensions.Lifecycle;
-
 namespace Code.Model.Services.BottomSlots
 {
-  public class BottomSlotsService : IBottomSlotsService, IInitializable
+  public class BottomSlotsService : IBottomSlotsService
   {
     private readonly Subject<int> _onSlotChanged = new();
     public Observable<int> OnSlotChanged => _onSlotChanged;

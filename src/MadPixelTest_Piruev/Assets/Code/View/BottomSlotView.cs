@@ -22,7 +22,7 @@ namespace Code.View
   ///
   /// ViewModel is assigned by BottomSlotsView via SetViewModel().
   /// </summary>
-  public class BottomSlotView : ZenjexBehaviour,
+  public class BottomSlotView : MonoBehaviour,
     IBeginDragHandler, IDragHandler, IEndDragHandler,
     IDropHandler
   {

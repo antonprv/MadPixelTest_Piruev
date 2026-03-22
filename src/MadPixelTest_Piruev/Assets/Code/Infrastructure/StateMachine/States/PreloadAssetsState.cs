@@ -78,8 +78,11 @@ namespace Code.Infrastructure.StateMachine.States
 
       if (ct.IsCancellationRequested) return;
 
-      _gsm.Enter<LoadLevelState, string>(SceneAddresses.Main);
+      OnAssetsPreloaded();
     }
+
+    private void OnAssetsPreloaded() =>
+      _gsm.Enter<LoadLevelState, string>(SceneAddresses.MainAddress);
 
     public void Exit()
     {

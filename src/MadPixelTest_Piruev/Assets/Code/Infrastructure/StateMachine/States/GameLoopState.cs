@@ -6,6 +6,7 @@ using Code.Infrastructure.StateMachine.States.Interfaces;
 using Code.Infrastructure.StateMachine.States.Types;
 using Code.Model.Core;
 using Code.Model.Services.Inventory.Interfaces;
+using Code.Model.Services.Startup;
 using Code.Presenter.Bag;
 
 using R3;
@@ -15,30 +16,40 @@ namespace Code.Infrastructure.StateMachine.States
   /// <summary>
   /// State 4 of 4 — active gameplay.
   ///
-  /// Subscribes to IBagPresenter (MVP layer) instead of IGridInventoryService directly.
-  /// Reason: GSM is infrastructure — it should talk to the Presenter tier, not bypass it
-  /// to reach domain services. The Presenter is the single coordination point above the Model.
-  ///
-  /// In a real game these handlers would trigger: quest system, analytics, sound, VFX.
+  /// On Enter:
+  ///   1. IStartupItemsService.PlaceStartupItems() — fills inventory with
+  ///      starter items from the manifest. Safe to call here because
+  ///      LoadLevelState already called InitializeModelServices() before
+  ///      transitioning to this state.
+  ///   2. Subscribes to IBagPresenter events for game-level reactions
+  ///      (analytics, sound, quests — currently just logging).
   /// </summary>
   public class GameLoopState : IGameState
   {
     public StateType Type => StateType.GameLoop;
 
-    private readonly IBagPresenter _bagPresenter;
-    private readonly IGameLog _logger;
+    private readonly IBagPresenter        _bagPresenter;
+    private readonly IStartupItemsService _startupItems;
+    private readonly IGameLog             _logger;
 
     private CompositeDisposable _disposables;
 
-    public GameLoopState(IBagPresenter bagPresenter, IGameLog logger)
+    public GameLoopState(
+      IBagPresenter        bagPresenter,
+      IStartupItemsService startupItems,
+      IGameLog             logger)
     {
       _bagPresenter = bagPresenter;
-      _logger = logger;
+      _startupItems = startupItems;
+      _logger       = logger;
     }
 
     public void Enter()
     {
       _disposables = new CompositeDisposable();
+
+      _startupItems.PlaceStartupItems();
+
       SubscribeToInventory();
     }
 
@@ -64,6 +75,7 @@ namespace Code.Infrastructure.StateMachine.States
         .Subscribe(OnItemsMerged)
         .AddTo(_disposables);
     }
+
     #endregion
 
     #region Handlers (extension points)
@@ -76,6 +88,7 @@ namespace Code.Infrastructure.StateMachine.States
 
     private void OnItemsMerged(MergeResult result) =>
       _logger.Log($"[GameLoop] Merged → {result.Result.Config.ItemId} (Lv{result.Result.Config.Level})");
+
     #endregion
   }
 }

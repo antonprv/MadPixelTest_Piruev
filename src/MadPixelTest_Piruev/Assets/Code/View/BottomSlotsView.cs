@@ -5,27 +5,24 @@ using Code.ViewModel.BottomSlots;
 
 using UnityEngine;
 
-using Zenjex.Extensions.Attribute;
-using Zenjex.Extensions.Injector;
-
 namespace Code.View
 {
   /// <summary>
-  /// MVVM View — spawns BottomSlotView prefabs and assigns ViewModels from IBottomSlotsViewModel.
+  /// MVVM View — spawns BottomSlotView prefabs and assigns ViewModels.
+  /// Receives its ViewModel via Construct() called by UIFactory.
   /// </summary>
-  public class BottomSlotsView : ZenjexBehaviour
+  public class BottomSlotsView : MonoBehaviour
   {
-    [SerializeField] private RectTransform _slotsRoot;
+    [SerializeField] private RectTransform  _slotsRoot;
     [SerializeField] private BottomSlotView _slotPrefab;
 
-    [Zenjex] private IBottomSlotsViewModel _slotsViewModel;
-
-    protected override void OnAwake()
+    /// <summary>Called by UIFactory after domain services are initialized.</summary>
+    public void Construct(IBottomSlotsViewModel slotsViewModel)
     {
-      for (int i = 0; i < _slotsViewModel.SlotCount; i++)
+      for (int i = 0; i < slotsViewModel.SlotCount; i++)
       {
-        var slot = Instantiate(_slotPrefab, _slotsRoot);
-        var slotViewModel = _slotsViewModel.GetSlotViewModel(i);
+        var slot          = Instantiate(_slotPrefab, _slotsRoot);
+        var slotViewModel = slotsViewModel.GetSlotViewModel(i);
         slot.SetViewModel(slotViewModel);
       }
     }

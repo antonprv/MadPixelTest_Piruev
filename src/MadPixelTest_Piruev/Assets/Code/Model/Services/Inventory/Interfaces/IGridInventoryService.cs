@@ -34,6 +34,7 @@ namespace Code.Model.Services.Inventory.Interfaces
     #region Merge
     bool CanMerge(InventoryItem dragged, Vector2Int targetCell, out InventoryItem targetItem);
     InventoryItem Merge(InventoryItem a, InventoryItem b);
+    void Initialize();
     #endregion
   }
 

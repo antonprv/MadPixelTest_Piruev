@@ -20,5 +20,6 @@ namespace Code.Model.Services.BottomSlots.Interfaces
     bool TryPlace(InventoryItem item, int slotIndex);
     bool TryRemove(int slotIndex, out InventoryItem removed);
     bool TryPlaceInFirstFreeSlot(InventoryItem item, out int placedIndex);
+    void Initialize();
   }
 }

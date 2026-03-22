@@ -8,50 +8,39 @@ using R3;
 using UnityEngine;
 using UnityEngine.UI;
 
-using Zenjex.Extensions.Attribute;
-using Zenjex.Extensions.Injector;
-
 namespace Code.View
 {
   /// <summary>
   /// MVVM View — floating drag icon.
-  ///
-  /// Binds to IDragIconViewModel:
-  ///   IsVisible  → gameObject.SetActive
-  ///   Sprite     → _icon.sprite
-  ///   OnPositionUpdate → canvas coordinate conversion + rectTransform.localPosition
-  ///
-  /// Canvas coordinate math stays here because it requires Unity-specific API
-  /// (RectTransformUtility, Canvas.worldCamera) that doesn't belong in a ViewModel.
+  /// Receives its ViewModel via Construct() called by UIFactory.
   /// </summary>
-  public class DragIconView : ZenjexBehaviour
+  public class DragIconView : MonoBehaviour
   {
-    [SerializeField] private Image _icon;
+    [SerializeField] private Image       _icon;
     [SerializeField] private CanvasGroup _canvasGroup;
-    [SerializeField] private float _dragAlpha = 0.85f;
+    [SerializeField] private float       _dragAlpha = 0.85f;
 
-    [Zenjex] private IDragIconViewModel _viewModel;
+    private RectTransform        _rectTransform;
+    private Canvas               _rootCanvas;
+    private CompositeDisposable  _disposables;
 
-    private RectTransform _rectTransform;
-    private Canvas _rootCanvas;
-    private CompositeDisposable _disposables;
-
-    protected override void OnAwake()
+    /// <summary>Called by UIFactory after domain services are initialized.</summary>
+    public void Construct(IDragIconViewModel viewModel)
     {
       _rectTransform = GetComponent<RectTransform>();
-      _rootCanvas = GetComponentInParent<Canvas>();
-      _disposables = new CompositeDisposable();
+      _rootCanvas    = GetComponentInParent<Canvas>();
+      _disposables   = new CompositeDisposable();
 
       gameObject.SetActive(false);
 
-      Bind();
+      Bind(viewModel);
     }
 
     private void OnDestroy() => _disposables?.Dispose();
 
-    private void Bind()
+    private void Bind(IDragIconViewModel viewModel)
     {
-      _viewModel.IsVisible
+      viewModel.IsVisible
         .Subscribe(visible =>
         {
           gameObject.SetActive(visible);
@@ -59,15 +48,15 @@ namespace Code.View
         })
         .AddTo(_disposables);
 
-      _viewModel.Sprite
+      viewModel.Sprite
         .Subscribe(sprite =>
         {
           _icon.sprite = sprite;
-          _icon.color = sprite != null ? Color.white : Color.clear;
+          _icon.color  = sprite != null ? Color.white : Color.clear;
         })
         .AddTo(_disposables);
 
-      _viewModel.OnPositionUpdate
+      viewModel.OnPositionUpdate
         .Subscribe(UpdateCanvasPosition)
         .AddTo(_disposables);
     }

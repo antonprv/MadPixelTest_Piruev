@@ -29,7 +29,7 @@ namespace Code.Infrastructure.Services.StaticData.Subservices
     public IReadOnlyList<ItemConfig> Items => _loadedItems;
 
     private readonly List<ItemConfig> _loadedItems = new();
-    private readonly Dictionary<string, ItemConfig> _itemDatas = new();
+    private readonly Dictionary<string, ItemConfig> _itemManifest = new();
 
     private ItemManifest _manifest;
 
@@ -59,14 +59,14 @@ namespace Code.Infrastructure.Services.StaticData.Subservices
 
     /// <inheritdoc/>
     public ItemConfig ForItem(string itemId) =>
-      _itemDatas.TryGetValue(itemId, out var cfg) ? cfg : null;
+      _itemManifest.TryGetValue(itemId, out var cfg) ? cfg : null;
 
     private async UniTask LoadAndRegisterAsync(string id, AssetReferenceT<ItemConfig> reference)
     {
       var cfg = await _assetLoader.LoadAsync<ItemConfig>(reference);
       if (cfg == null) return;
 
-      _itemDatas[id]    = cfg;
+      _itemManifest[id]    = cfg;
       _loadedItems.Add(cfg);
     }
   }

@@ -15,15 +15,33 @@ MonoBehaviour:
   m_GroupName: Streaming_UI_Piruev
   m_GUID: c8a5e1b86286b2446a481624d0787da3
   m_SerializeEntries:
+  - m_GUID: 065dd2d278a91e9439a8ba45a7828dd8
+    m_Address: PUI_Cell
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Streaming_UI
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 24c0dd37e3c266f4d9275d5b850899b5
     m_Address: PUI_LoadingCurtain
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Streaming_UI
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7159e46df4e417e4cafc7bb2d7670514
+    m_Address: PUI_Slot
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Streaming_UI
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7b1b8e20096650d44a1811b0b79ac545
+    m_Address: Sprites
     m_ReadOnly: 0
     m_SerializedLabels:
     - Preload_UI
     - Streaming_UI
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 7b1b8e20096650d44a1811b0b79ac545
-    m_Address: Sprites
+  - m_GUID: f29300a4bc9604a46bd3dbdd899a1da8
+    m_Address: PUI_BagCanvas
     m_ReadOnly: 0
     m_SerializedLabels:
     - Streaming_UI
