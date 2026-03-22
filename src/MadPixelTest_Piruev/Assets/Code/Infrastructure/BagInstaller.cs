@@ -2,6 +2,11 @@ using System.Collections;
 using Reflex.Core;
 using UnityEngine;
 using BagFight.Data;
+using BagFight.Infrastructure.AssetManagement;
+using BagFight.Infrastructure.AssetsPreloader;
+using BagFight.Infrastructure.Loading;
+using BagFight.Infrastructure.StateMachine;
+using BagFight.Infrastructure.StateMachine.Factory;
 using BagFight.Services;
 using BagFight.Services.Interfaces;
 using BagFight.UI;
@@ -10,58 +15,106 @@ using Zenjex.Extensions.Core;
 namespace BagFight.Infrastructure
 {
   /// <summary>
-  /// Корневой инсталлер проекта (Zenjex / Reflex).
+  /// Корневой DI-инсталлер проекта.
   ///
-  /// Привязки:
-  ///   BagConfig             — экземпляр SO, серилизован в инспекторе
-  ///   DragIconView          — сцена-объект, серилизован в инспекторе
-  ///   GridInventoryService  — AsSingle + IInitializable (вызов Initialize() автоматически)
-  ///   BottomSlotsService    — AsSingle + IInitializable
-  ///   GridDragDropService   — AsSingle
+  /// Порядок регистраций:
+  ///   1. Данные (ScriptableObjects)
+  ///   2. Asset infrastructure (AssetLoader, AssetsPreloader)
+  ///   3. Loading UI (LoadingCurtain)
+  ///   4. GSM — GameStateMachine + StateFactory + все стейты
+  ///   5. Gameplay-сервисы (GridInventory, BottomSlots, DragDrop)
+  ///   6. Scene-синглтоны (DragIconView)
   ///
-  /// Порядок жизненного цикла Zenjex:
-  ///   1. InstallBindings → ContainerReady → [Zenjex]-инъекция в сцене
-  ///   2. InstallGameInstanceRoutine (null)
-  ///   3. IInitializable.Initialize() на сервисах
-  ///   4. LaunchGame (пусто — запуск происходит через Initialize)
-  ///   5. OnGameLaunched → вторая волна инъекций (для динамически созданных объектов)
+  /// GameStateMachine реализует IInitializable →
+  ///   Zenjex вызовет Initialize() после сборки контейнера →
+  ///   GSM войдёт в BootstrapState автоматически.
   /// </summary>
   public class BagInstaller : ProjectRootInstaller
   {
     [Header("Configs")]
-    [SerializeField] private BagConfig _bagConfig;
+    [SerializeField] private BagConfig    _bagConfig;
+    [SerializeField] private ItemManifest _itemManifest;
 
     [Header("Scene references")]
-    [SerializeField] private DragIconView _dragIconView;
+    [SerializeField] private DragIconView   _dragIconView;
+    [SerializeField] private LoadingCurtain _loadingCurtain;
 
     public override void InstallBindings(ContainerBuilder builder)
     {
-      // ── Data ─────────────────────────────────────────────────────────────
-      // BindInstance<T> сразу регистрирует как синглтон под контрактом T.
-      builder.BindInstance(_bagConfig).AsSingle();
-      builder.BindInstance(_dragIconView).AsSingle();
-
-      // ── Services ─────────────────────────────────────────────────────────
-      // Bind<ConcreteType>().BindInterfacesAndSelf() раскрывает все интерфейсы
-      // конкретного класса как контракты, включая IInitializable —
-      // тогда ProjectRootInstaller автоматически вызовет Initialize().
-
-      builder.Bind<GridInventoryService>()
-        .BindInterfacesAndSelf()   // → IGridInventoryService + IInitializable + сам тип
-        .AsSingle();
-
-      builder.Bind<BottomSlotsService>()
-        .BindInterfacesAndSelf()   // → IBottomSlotsService + IInitializable + сам тип
-        .AsSingle();
-
-      // GridDragDropService не реализует IInitializable, просто синглтон
-      builder.Bind<GridDragDropService>()
-        .BindInterfacesAndSelf()   // → IGridDragDropService + сам тип
-        .AsSingle();
+      RegisterData(builder);
+      RegisterAssetInfrastructure(builder);
+      RegisterLoadingUI(builder);
+      RegisterGSM(builder);
+      RegisterGameplayServices(builder);
+      RegisterSceneSingletons(builder);
     }
 
     public override IEnumerator InstallGameInstanceRoutine() => null;
 
-    public override void LaunchGame() { /* GSM не нужен для тестового задания */ }
+    // LaunchGame пустой — старт через IInitializable на GameStateMachine
+    public override void LaunchGame() { }
+
+    // ─── Registration groups ──────────────────────────────────────────────────
+
+    private void RegisterData(ContainerBuilder builder)
+    {
+      builder.BindInstance(_bagConfig).AsSingle();
+      builder.BindInstance(_itemManifest).AsSingle();
+    }
+
+    private void RegisterAssetInfrastructure(ContainerBuilder builder)
+    {
+      builder.Bind<AssetLoader>()
+        .BindInterfacesAndSelf()   // → IAssetLoader
+        .AsSingle();
+
+      builder.Bind<BagAssetsPreloader>()
+        .BindInterfacesAndSelf()   // → IAssetsPreloader
+        .AsSingle();
+    }
+
+    private void RegisterLoadingUI(ContainerBuilder builder)
+    {
+      builder.BindInstance(_loadingCurtain)
+        .BindInterfacesAndSelf()   // → ILoadingScreen + LoadingCurtain
+        .AsSingle();
+    }
+
+    private void RegisterGSM(ContainerBuilder builder)
+    {
+      // StateFactory резолвит стейты из контейнера
+      builder.Bind<StateFactory>()
+        .AsSingle();
+
+      // GameStateMachine — IInitializable → Zenjex запустит Initialize() автоматически
+      builder.Bind<GameStateMachine>()
+        .BindInterfacesAndSelf()   // → IGameStateMachine + IInitializable
+        .AsSingle();
+
+      // Стейты — AsTransient: свежий экземпляр при каждом переходе
+      builder.Bind<BootstrapState>().AsTransient();
+      builder.Bind<PreloadAssetsState>().AsTransient();
+      builder.Bind<GameLoopState>().AsTransient();
+    }
+
+    private void RegisterGameplayServices(ContainerBuilder builder)
+    {
+      builder.Bind<GridInventoryService>()
+        .BindInterfacesAndSelf()   // → IGridInventoryService + IInitializable
+        .AsSingle();
+
+      builder.Bind<BottomSlotsService>()
+        .BindInterfacesAndSelf()   // → IBottomSlotsService + IInitializable
+        .AsSingle();
+
+      builder.Bind<GridDragDropService>()
+        .BindInterfacesAndSelf()   // → IGridDragDropService
+        .AsSingle();
+    }
+
+    private void RegisterSceneSingletons(ContainerBuilder builder)
+    {
+      builder.BindInstance(_dragIconView).AsSingle();
+    }
   }
 }

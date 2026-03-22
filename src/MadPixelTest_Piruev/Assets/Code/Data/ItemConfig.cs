@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 
 namespace BagFight.Data
 {
@@ -8,14 +9,18 @@ namespace BagFight.Data
   /// Shape — список смещений от origin (верхний-левый угол bounding box).
   /// Пример L-шки: [(0,0), (0,1), (0,2), (1,2)]
   /// MergeResult — в какой предмет превращаются два одинаковых при мерже.
+  ///
+  /// Icon — AssetReferenceSprite (Addressable).
+  /// AssetsPreloader прогревает все иконки по лейблу "ItemIcon" до старта геймплея,
+  /// поэтому в рантайме AssetLoader.LoadAsync возвращает результат из кэша мгновенно.
   /// </summary>
   [CreateAssetMenu(fileName = "ItemConfig", menuName = "BagFight/Item Config")]
   public class ItemConfig : ScriptableObject
   {
-    [field: SerializeField] public string ItemId     { get; private set; }
-    [field: SerializeField] public int    Level      { get; private set; } = 1;
-    [field: SerializeField] public Sprite Icon       { get; private set; }
-    [field: SerializeField] public Color  ItemColor  { get; private set; } = Color.white;
+    [field: SerializeField] public string               ItemId    { get; private set; }
+    [field: SerializeField] public int                  Level     { get; private set; } = 1;
+    [field: SerializeField] public AssetReferenceSprite Icon      { get; private set; }
+    [field: SerializeField] public Color                ItemColor { get; private set; } = Color.white;
 
     [field: SerializeField]
     public List<Vector2Int> Shape { get; private set; } = new() { Vector2Int.zero };

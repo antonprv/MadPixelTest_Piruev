@@ -1,6 +1,6 @@
 {
-    "name": "BagFight.Tests",
-    "rootNamespace": "BagFight.Tests",
+    "name": "Code.Tests",
+    "rootNamespace": "Code.Tests",
     "references": [
         "Code",
         "UnityEngine.TestRunner",

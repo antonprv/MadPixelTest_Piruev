@@ -41,7 +41,8 @@ namespace BagFight.Editor
       // ── Базовые поля ──────────────────────────────────────────────────────
       EditorGUILayout.PropertyField(_itemId,      new GUIContent("Item Id"));
       EditorGUILayout.PropertyField(_level,       new GUIContent("Level"));
-      EditorGUILayout.PropertyField(_icon,        new GUIContent("Icon"));
+      // Icon — AssetReferenceSprite, стандартный PropertyField рисует Addressable-picker
+      EditorGUILayout.PropertyField(_icon,        new GUIContent("Icon (Addressable)"));
       EditorGUILayout.PropertyField(_itemColor,   new GUIContent("Item Color"));
       EditorGUILayout.PropertyField(_mergeResult, new GUIContent("Merge Result"));
 

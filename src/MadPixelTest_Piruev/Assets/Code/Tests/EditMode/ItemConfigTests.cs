@@ -58,6 +58,7 @@ namespace BagFight.Tests.EditMode
     public void CanMerge_WithMergeResult_IsTrue()
     {
       var result = InventoryTestHelpers.Single(level: 2);
+      // MergeResult задаётся через SetTestData → backing field
       var cfg    = InventoryTestHelpers.Single(level: 1, mergeResult: result);
       Assert.IsTrue(cfg.CanMerge);
     }

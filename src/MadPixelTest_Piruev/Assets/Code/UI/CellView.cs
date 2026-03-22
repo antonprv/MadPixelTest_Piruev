@@ -1,8 +1,10 @@
 using System;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using BagFight.Core;
+using BagFight.Infrastructure.AssetManagement;
 using BagFight.Services.Interfaces;
 using BagFight.UI.Types;
 using Zenjex.Extensions.Attribute;
@@ -45,10 +47,11 @@ namespace BagFight.UI
     [SerializeField] private float _placeDuration = 0.12f;
 
     // ─── Injected ─────────────────────────────────────────────────────────────
-    [Zenjex] private IGridInventoryService _inventoryService;
-    [Zenjex] private IBottomSlotsService   _slotsService;
-    [Zenjex] private IGridDragDropService  _dragDropService;
-    [Zenjex] private DragIconView          _dragIconView;
+    [Zenjex] private IGridInventoryService              _inventoryService;
+    [Zenjex] private IBottomSlotsService                _slotsService;
+    [Zenjex] private IGridDragDropService               _dragDropService;
+    [Zenjex] private DragIconView                       _dragIconView;
+    [Zenjex] private IAssetLoader                       _assetLoader;
 
     // ─── State ────────────────────────────────────────────────────────────────
     private Vector2Int _cellCoord;
@@ -80,22 +83,22 @@ namespace BagFight.UI
 
     // ─── View refresh ─────────────────────────────────────────────────────────
 
-    public void RefreshView()
+    public void RefreshView() => RefreshViewAsync().Forget();
+
+    private async UniTaskVoid RefreshViewAsync()
     {
       var item     = _inventoryService.GetItemAt(_cellCoord);
       bool isEmpty = item == null;
 
-      // Фон
       _background.color = isEmpty ? _emptyColor : item.Config.ItemColor;
 
-      // Иконка — только на origin-клетке предмета
-      if (_iconImage != null)
-      {
-        bool isOrigin = !isEmpty && item.Origin == _cellCoord;
-        _iconImage.enabled = isOrigin;
-        if (isOrigin)
-          _iconImage.sprite = item.Config.Icon;
-      }
+      if (_iconImage == null) return;
+
+      bool isOrigin = !isEmpty && item.Origin == _cellCoord;
+      _iconImage.enabled = isOrigin;
+
+      if (isOrigin && item.Config.Icon != null)
+        _iconImage.sprite = await _assetLoader.LoadAsync<Sprite>(item.Config.Icon);
     }
 
     public void SetHighlight(HighlightState state)
@@ -129,20 +132,24 @@ namespace BagFight.UI
       var item = _inventoryService.GetItemAt(_cellCoord);
       if (item == null) return;
 
-      // Смещение: от захваченной ячейки до origin предмета.
-      // Пример: origin=(1,0), захвачена ячейка (1,2) → offset=(0,2)
       var dragOffset = _cellCoord - item.Origin;
-
-      // Убираем предмет с грида (ячейки освобождаются)
       _inventoryService.TryRemove(item);
-
-      // Регистрируем драг с offset'ом
       _dragDropService.StartDrag(item, DragSource.Bag, dragOffset);
 
-      // Показываем плавающую иконку
-      _dragIconView.Show(item.Config.Icon, eventData.position);
-
+      // Показываем иконку сразу из кэша — к этому моменту preloader уже прогрел все спрайты
+      ShowDragIconAsync(item, eventData.position).Forget();
       RefreshView();
+    }
+
+    private async UniTaskVoid ShowDragIconAsync(InventoryItem item, Vector2 position)
+    {
+      var sprite = item.Config.Icon != null
+        ? await _assetLoader.LoadAsync<Sprite>(item.Config.Icon)
+        : null;
+
+      // Проверяем что драг ещё активен (пользователь мог отпустить)
+      if (_dragDropService.IsDragging && sprite != null)
+        _dragIconView.Show(sprite, position);
     }
 
     // ─── IDragHandler ─────────────────────────────────────────────────────────

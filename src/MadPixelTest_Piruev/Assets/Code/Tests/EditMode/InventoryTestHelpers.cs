@@ -104,6 +104,7 @@ namespace BagFight.Tests
       SetBacking(t, cfg, "Level",       level);
       SetBacking(t, cfg, "Shape",       shape);
       SetBacking(t, cfg, "MergeResult", mergeResult);
+      // Icon (AssetReferenceSprite) не задаём в тестах — логика грида от него не зависит
     }
 
     private static void SetBacking(System.Type type, object obj, string propName, object value)

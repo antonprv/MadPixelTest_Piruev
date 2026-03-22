@@ -6,7 +6,7 @@
   <Project Path="Plugins.SimpleInput.csproj" />
   <Project Path="UniTask.Addressables.csproj" />
   <Project Path="Code.csproj" />
-  <Project Path="BagFight.Tests.csproj" />
+  <Project Path="Code.Tests.csproj" />
   <Project Path="Reflex.Editor.csproj" />
   <Project Path="UniTask.TextMeshPro.csproj" />
   <Project Path="Zenjex.csproj" />

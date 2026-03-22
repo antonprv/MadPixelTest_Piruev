@@ -1,7 +1,9 @@
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using BagFight.Core;
+using BagFight.Infrastructure.AssetManagement;
 using BagFight.Services.Interfaces;
 using BagFight.UI.Types;
 using Zenjex.Extensions.Attribute;
@@ -40,6 +42,7 @@ namespace BagFight.UI
     [Zenjex] private IBottomSlotsService  _slotsService;
     [Zenjex] private IGridDragDropService _dragDropService;
     [Zenjex] private DragIconView         _dragIconView;
+    [Zenjex] private IAssetLoader         _assetLoader;
 
     // ─── State ────────────────────────────────────────────────────────────────
     private int _slotIndex;
@@ -54,19 +57,20 @@ namespace BagFight.UI
 
     // ─── View ─────────────────────────────────────────────────────────────────
 
-    public void RefreshView()
+    public void RefreshView() => RefreshViewAsync().Forget();
+
+    private async UniTaskVoid RefreshViewAsync()
     {
-      var item   = _slotsService.GetSlot(_slotIndex);
+      var item  = _slotsService.GetSlot(_slotIndex);
       bool empty = item == null;
 
       _background.color = empty ? _emptyColor : _occupiedColor;
 
-      if (_iconImage != null)
-      {
-        _iconImage.enabled = !empty;
-        if (!empty)
-          _iconImage.sprite = item.Config.Icon;
-      }
+      if (_iconImage == null) return;
+      _iconImage.enabled = !empty;
+
+      if (!empty && item.Config.Icon != null)
+        _iconImage.sprite = await _assetLoader.LoadAsync<Sprite>(item.Config.Icon);
     }
 
     // ─── IBeginDragHandler ────────────────────────────────────────────────────
@@ -75,10 +79,19 @@ namespace BagFight.UI
     {
       if (!_slotsService.TryRemove(_slotIndex, out var item)) return;
 
-      // Предметы из слота всегда кладутся по origin = ячейка дропа (offset нулевой)
       _dragDropService.StartDrag(item, DragSource.BottomSlot, Vector2Int.zero, _slotIndex);
-      _dragIconView.Show(item.Config.Icon, eventData.position);
+      ShowDragIconAsync(item, eventData.position).Forget();
       RefreshView();
+    }
+
+    private async UniTaskVoid ShowDragIconAsync(InventoryItem item, Vector2 position)
+    {
+      var sprite = item.Config.Icon != null
+        ? await _assetLoader.LoadAsync<Sprite>(item.Config.Icon)
+        : null;
+
+      if (_dragDropService.IsDragging && sprite != null)
+        _dragIconView.Show(sprite, position);
     }
 
     // ─── IDragHandler ─────────────────────────────────────────────────────────
