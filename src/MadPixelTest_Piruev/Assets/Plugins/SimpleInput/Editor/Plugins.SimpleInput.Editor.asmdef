@@ -1,0 +1,18 @@
+{
+    "name": "Plugins.SimpleInput.Editor",
+    "rootNamespace": "",
+    "references": [
+        "GUID:f8fd764df0f38814c8c75c97b77d686b"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

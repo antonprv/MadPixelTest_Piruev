@@ -1,0 +1,17 @@
+﻿<Solution>
+  <Project Path="UniTask.csproj" />
+  <Project Path="Plugins.LeanTween.csproj" />
+  <Project Path="UniTask.Linq.csproj" />
+  <Project Path="Reflex.csproj" />
+  <Project Path="Plugins.SimpleInput.csproj" />
+  <Project Path="UniTask.Addressables.csproj" />
+  <Project Path="Code.csproj" />
+  <Project Path="BagFight.Tests.csproj" />
+  <Project Path="Reflex.Editor.csproj" />
+  <Project Path="UniTask.TextMeshPro.csproj" />
+  <Project Path="Zenjex.csproj" />
+  <Project Path="Code.Editor.csproj" />
+  <Project Path="Plugins.SimpleInput.Editor.csproj" />
+  <Project Path="UniTask.Editor.csproj" />
+  <Project Path="UniTask.DOTween.csproj" />
+</Solution>

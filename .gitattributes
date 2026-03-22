@@ -1,0 +1,159 @@
+# Unity project root files and folders
+src/*/[Ll]ibrary/
+src/*/[Tt]emp/
+src/*/[Oo]bj/
+src/*/[Bb]uild/
+src/*/[Ll]ogs/
+src/*/[Uu]ser[Ss]ettings/
+# Unity project files
+src/*/Assets/Plugins/**
+src/*/Packages/packages-lock.json
+src/*/LightingData.asset
+# Unity source files
+src/*/**.cginc
+src/*/**.compute
+src/*/**.cs
+src/*/**.hlsl
+src/*/**.raytrace
+src/*/**.shader
+# Unity JSON files
+src/*/**.asmdef
+src/*/**.asmref
+src/*/**.index
+src/*/**.inputactions
+src/*/**.shadergraph
+src/*/**.shadersubgraph
+# Unity UI Toolkit files
+src/*/**.tss
+src/*/**.uss
+src/*/**.uxml
+# Unity YAML files
+src/*/**.anim
+src/*/**.asset
+src/*/**.brush
+src/*/**.controller
+src/*/**.flare
+src/*/**.fontsettings
+src/*/**.giparams
+src/*/**.guiskin
+src/*/**.lighting
+src/*/**.mask
+src/*/**.mat
+src/*/**.meta
+src/*/**.mixer
+src/*/**.overrideController
+src/*/**.playable
+src/*/**.prefab
+src/*/**.preset
+src/*/**.renderTexture
+src/*/**.scenetemplate
+src/*/**.shadervariants
+src/*/**.signal
+src/*/**.spriteatlas
+src/*/**.spriteatlasv2
+src/*/**.terrainlayer
+src/*/**.unity
+# "physic" for 3D but "physics" for 2D
+src/*/**.physicMaterial
+src/*/**.physicsMaterial2D
+# Unity LFS
+src/*/**.cubemap
+src/*/**.unitypackage
+# 3D models
+src/*/**.3dm
+src/*/**.3ds
+src/*/**.blend
+src/*/**.blend1
+src/*/**.c4d
+src/*/**.collada
+src/*/**.dae
+src/*/**.dxf
+src/*/**.FBX
+src/*/**.fbx
+src/*/**.jas
+src/*/**.lws
+src/*/**.lxo
+src/*/**.ma
+src/*/**.max
+src/*/**.mb
+src/*/**.obj
+src/*/**.ply
+src/*/**.skp
+src/*/**.stl
+src/*/**.ztl
+# Audio
+src/*/**.aif
+src/*/**.aiff
+src/*/**.it
+src/*/**.mod
+src/*/**.mp3
+src/*/**.ogg
+src/*/**.s3m
+src/*/**.wav
+src/*/**.xm
+# Video
+src/*/**.asf
+src/*/**.avi
+src/*/**.flv
+src/*/**.mov
+src/*/**.mp4
+src/*/**.mpeg
+src/*/**.mpg
+src/*/**.ogv
+src/*/**.wmv
+# Images
+src/*/**.bmp
+src/*/**.exr
+src/*/**.gif
+src/*/**.hdr
+src/*/**.iff
+src/*/**.jpeg
+src/*/**.jpg
+src/*/**.pict
+src/*/**.png
+src/*/**.psd
+src/*/**.tga
+src/*/**.tif
+src/*/**.tiff
+src/*/**.webp
+# Compressed Archive
+src/*/**.7z
+src/*/**.bz2
+src/*/**.gz
+src/*/**.rar
+src/*/**.tar
+src/*/**.zip
+# Compiled Dynamic Library
+src/*/**.dll
+src/*/**.pdb
+src/*/**.so
+# Fonts
+src/*/**.otf
+src/*/**.ttf
+# Executable/Installer
+src/*/**.apk
+src/*/**.exe
+# Documents
+src/*/**.pdf
+# ETC
+src/*/**.a
+src/*/**.reason
+src/*/**.rns
+# Spine export file for Unity
+src/*/**.skel.bytes
+# Unity-generated files
+src/*/**.asset.meta
+src/*/**.unity.meta
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+# Project files that should be in the root of your Unity project 
+# This .gitignore file should be placed at the root of your repository, not Unity project 
+# Note: Only your Assets directory and essential project files need to be committed to the repo 
+*.jpg filter=lfs diff=lfs merge=lfs -text
+*.png filter=lfs diff=lfs merge=lfs -text
