@@ -9,17 +9,19 @@ using UnityEngine;
 
 namespace Code.Infrastructure.Services.StaticData.Interfaces
 {
+  /// <summary>
+  /// Exposes bag layout properties consumed by domain services and ViewModels.
+  /// Backed by LevelBagConfigSubservice which delegates live to
+  /// ILevelStaticDataService.CurrentBagConfig after LoadForLevelAsync().
+  /// LoadSelfAsync() is a no-op — the real load is done per-level in LoadLevelState.
+  /// </summary>
   public interface IBagConfigSubservice
   {
-    Vector2Int GridSize       { get; }
+    Vector2Int GridSize        { get; }
     int        BottomSlotCount { get; }
-    float      CellSize       { get; }
-    float      CellSpacing    { get; }
+    float      CellSize        { get; }
+    float      CellSpacing     { get; }
 
-    /// <summary>
-    /// Returns the set of active grid cells.
-    /// If BagConfig has no custom shape, returns all cells in the GridSize rectangle.
-    /// </summary>
     HashSet<Vector2Int> GetActiveCellsSet();
 
     UniTask LoadSelfAsync();

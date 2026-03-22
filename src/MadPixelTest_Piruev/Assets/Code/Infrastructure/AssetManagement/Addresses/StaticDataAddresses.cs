@@ -11,5 +11,11 @@ namespace Code.Infrastructure.AssetManagement.Addresses
   {
     public const string BagConfig    = "BagConfig";
     public const string ItemManifest = "ItemManifest";
+
+    /// <summary>Level name → BagConfig manifest.</summary>
+    public const string LevelBagManifest        = "LevelBagManifest";
+
+    /// <summary>Level name → LevelItemPreset manifest.</summary>
+    public const string LevelItemPresetManifest = "LevelItemPresetManifest";
   }
 }

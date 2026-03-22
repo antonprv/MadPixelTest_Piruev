@@ -3,7 +3,8 @@
 
 using System.Collections.Generic;
 
-using Code.Data.StaticData;
+using Code.Data.StaticData.Configs;
+
 using Code.Infrastructure.Services.StaticData.Interfaces;
 using Code.Model.Core;
 using Code.Model.Services.Inventory.Interfaces;
@@ -81,6 +82,18 @@ namespace Code.Model.Services.Inventory
     public InventoryItem Merge(InventoryItem a, InventoryItem b)
     {
       var merged = _grid.Merge(a, b);
+
+      // Remove icons for both source items.
+      // 'a' was already removed from the grid by StartDragFromBag, but its
+      // icon is still alive in BagView — this signal tells BagView to destroy it.
+      _onItemRemoved.OnNext(a);
+      _onItemRemoved.OnNext(b);
+
+      // Fire OnItemPlaced so BagView spawns the merged item's icon.
+      // GridInventory.Merge calls _grid.TryPlace() internally (pure model),
+      // which does NOT fire this service-level event — so we must fire it here.
+      _onItemPlaced.OnNext(merged);
+
       _onItemsMerged.OnNext(new MergeResult(a, b, merged));
       return merged;
     }

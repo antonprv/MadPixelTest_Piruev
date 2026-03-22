@@ -4,8 +4,9 @@
 using System;
 using System.Threading;
 
+using Code.Data.StaticData.Configs;
+
 using Code.Common.Extensions.Logging;
-using Code.Data.StaticData;
 using Code.Infrastructure.AssetManagement;
 using Code.Infrastructure.Services.StaticData.Interfaces;
 

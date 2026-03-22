@@ -11,7 +11,7 @@ namespace Code.Infrastructure.Installer
   /// Scene-scoped DI installer for the gameplay scene.
   ///
   /// BagConfig and ItemManifest are no longer bound here — they are loaded
-  /// from Addressables by StaticDataService (BagConfigSubservice / ItemDataSubservice)
+  /// from Addressables by StaticDataService (LevelBagConfigSubservice / ItemDataSubservice)
   /// before gameplay starts, and exposed via IBagConfigSubservice / IItemDataSubservice.
   ///
   /// This installer remains as the correct extension point for any future

@@ -3,7 +3,8 @@
 
 using System.Collections.Generic;
 
-using Code.Data.StaticData;
+using Code.Data.StaticData.Configs;
+
 using Code.Infrastructure.AssetManagement;
 using Code.Infrastructure.Services.StaticData.Interfaces;
 using Code.Model.Core;
@@ -36,6 +37,8 @@ namespace Code.Tests.EditMode.ViewModel
 
     private Subject<HighlightRequest> _highlightSubject;
     private Subject<MergeResult>      _mergeSubject;
+    private Subject<InventoryItem>    _placedSubject;
+    private Subject<InventoryItem>    _removedSubject;
 
     [SetUp]
     public void SetUp()
@@ -47,12 +50,15 @@ namespace Code.Tests.EditMode.ViewModel
 
       _highlightSubject = new Subject<HighlightRequest>();
       _mergeSubject     = new Subject<MergeResult>();
+      _placedSubject    = new Subject<InventoryItem>();
+      _removedSubject   = new Subject<InventoryItem>();
 
-      _bagPresenter.OnItemPlaced.Returns(Observable.Empty<InventoryItem>());
-      _bagPresenter.OnItemRemoved.Returns(Observable.Empty<InventoryItem>());
+      _bagPresenter.OnItemPlaced.Returns(_placedSubject);
+      _bagPresenter.OnItemRemoved.Returns(_removedSubject);
       _bagPresenter.OnItemsMerged.Returns(_mergeSubject);
       _bagPresenter.OnHighlightRequested.Returns(_highlightSubject);
       _bagPresenter.GetItemAt(Arg.Any<Vector2Int>()).Returns((InventoryItem)null);
+      _bagPresenter.GetAllItems().Returns(new List<InventoryItem>());
 
       _vm = new BagViewModel(_bagConfig, _bagPresenter, _dragDropPresenter, _assetLoader);
     }
@@ -60,7 +66,7 @@ namespace Code.Tests.EditMode.ViewModel
     [TearDown]
     public void TearDown() => _vm.Dispose();
 
-    #region Layout
+    // ── Layout ─────────────────────────────────────────────────────────────
 
     [Test]
     public void GridSize_MatchesBagConfig() =>
@@ -82,23 +88,15 @@ namespace Code.Tests.EditMode.ViewModel
       Assert.IsTrue(_vm.ActiveCells.Contains(new Vector2Int(2, 3)));
     }
 
-    #endregion
-
-    #region CellViewModels
+    // ── CellViewModels ─────────────────────────────────────────────────────
 
     [Test]
-    public void GetCellViewModel_ValidCoord_ReturnsNonNull()
-    {
-      var cellVm = _vm.GetCellViewModel(new Vector2Int(0, 0));
-      Assert.IsNotNull(cellVm);
-    }
+    public void GetCellViewModel_ValidCoord_ReturnsNonNull() =>
+      Assert.IsNotNull(_vm.GetCellViewModel(new Vector2Int(0, 0)));
 
     [Test]
-    public void GetCellViewModel_OutOfRange_ReturnsNull()
-    {
-      var cellVm = _vm.GetCellViewModel(new Vector2Int(99, 99));
-      Assert.IsNull(cellVm);
-    }
+    public void GetCellViewModel_OutOfRange_ReturnsNull() =>
+      Assert.IsNull(_vm.GetCellViewModel(new Vector2Int(99, 99)));
 
     [Test]
     public void GetCellViewModel_AllGridCoords_HaveCellViewModels()
@@ -108,9 +106,46 @@ namespace Code.Tests.EditMode.ViewModel
           Assert.IsNotNull(_vm.GetCellViewModel(new Vector2Int(x, y)));
     }
 
-    #endregion
+    // ── OnItemPlaced / OnItemRemoved forwarding ────────────────────────────
 
-    #region Highlight routing
+    [Test]
+    public void OnItemPlaced_ForwardsPresenterEvent()
+    {
+      InventoryItem received = null;
+      _vm.OnItemPlaced.Subscribe(i => received = i);
+
+      var item = MakeItem();
+      _placedSubject.OnNext(item);
+
+      Assert.AreSame(item, received);
+    }
+
+    [Test]
+    public void OnItemRemoved_ForwardsPresenterEvent()
+    {
+      InventoryItem received = null;
+      _vm.OnItemRemoved.Subscribe(i => received = i);
+
+      var item = MakeItem();
+      _removedSubject.OnNext(item);
+
+      Assert.AreSame(item, received);
+    }
+
+    // ── GetAllItems ────────────────────────────────────────────────────────
+
+    [Test]
+    public void GetAllItems_DelegatesToPresenter()
+    {
+      var list = new List<InventoryItem> { MakeItem(), MakeItem() };
+      _bagPresenter.GetAllItems().Returns(list);
+
+      var result = _vm.GetAllItems();
+
+      Assert.AreSame(list, result);
+    }
+
+    // ── Highlight routing ──────────────────────────────────────────────────
 
     [Test]
     public void HighlightRequest_RoutesToCorrectCellViewModel()
@@ -130,10 +165,10 @@ namespace Code.Tests.EditMode.ViewModel
     [Test]
     public void HighlightRequest_MultiCellShape_RoutesToAllCells()
     {
-      var shape = new List<Vector2Int> { new(0, 0), new(0, 1), new(1, 1) };
-      var cfg   = MakeCfg(shape);
+      var shape  = new List<Vector2Int> { new(0, 0), new(0, 1), new(1, 1) };
+      var cfg    = MakeCfg(shape);
       var origin = Vector2Int.zero;
-      var states = new System.Collections.Generic.Dictionary<Vector2Int, HighlightState>();
+      var states = new Dictionary<Vector2Int, HighlightState>();
 
       foreach (var offset in shape)
       {
@@ -152,9 +187,7 @@ namespace Code.Tests.EditMode.ViewModel
       }
     }
 
-    #endregion
-
-    #region Merge animation
+    // ── Merge animation ────────────────────────────────────────────────────
 
     [Test]
     public void OnMergeAnimation_Fires_WhenItemsMerged()
@@ -165,22 +198,15 @@ namespace Code.Tests.EditMode.ViewModel
       var mergedItem = new InventoryItem(
         MakeCfg(new List<Vector2Int> { Vector2Int.zero }), new Vector2Int(1, 2));
       var a = new InventoryItem(MakeCfg(new List<Vector2Int> { Vector2Int.zero }), Vector2Int.zero);
-      var b = a;
 
-      _mergeSubject.OnNext(new MergeResult(a, b, mergedItem));
+      _mergeSubject.OnNext(new MergeResult(a, a, mergedItem));
 
       Assert.IsNotNull(received);
       Assert.AreEqual(new Vector2Int(1, 2), received.Value);
     }
 
-    #endregion
+    // ── Helpers ────────────────────────────────────────────────────────────
 
-    #region Helpers
-
-    /// <summary>
-    /// Returns a mock IBagConfigSubservice configured with the given grid dimensions.
-    /// Avoids any dependency on the BagConfig ScriptableObject in unit tests.
-    /// </summary>
     private static IBagConfigSubservice MakeBagConfig(int w, int h)
     {
       var mock = Substitute.For<IBagConfigSubservice>();
@@ -189,13 +215,11 @@ namespace Code.Tests.EditMode.ViewModel
       mock.CellSize.Returns(80f);
       mock.CellSpacing.Returns(4f);
 
-      // Build the full active cells set (no custom shape)
       var cells = new HashSet<Vector2Int>();
       for (int x = 0; x < w; x++)
         for (int y = 0; y < h; y++)
           cells.Add(new Vector2Int(x, y));
       mock.GetActiveCellsSet().Returns(cells);
-
       return mock;
     }
 
@@ -209,7 +233,10 @@ namespace Code.Tests.EditMode.ViewModel
       return cfg;
     }
 
-    #endregion
+    private static InventoryItem MakeItem() =>
+      new InventoryItem(
+        MakeCfg(new List<Vector2Int> { Vector2Int.zero }),
+        Vector2Int.zero);
   }
 
   #endregion

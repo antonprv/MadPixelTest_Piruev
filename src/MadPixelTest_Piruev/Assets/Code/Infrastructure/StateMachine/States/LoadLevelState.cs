@@ -3,79 +3,114 @@
 
 using System.Threading;
 
+using Code.Infrastructure.Loading;
 using Code.Infrastructure.SceneLoader;
+using Code.Infrastructure.Services.StaticData;
 using Code.Infrastructure.StateMachine.States.Interfaces;
 using Code.Infrastructure.StateMachine.States.Types;
 using Code.Model.Services.BottomSlots.Interfaces;
 using Code.Model.Services.Inventory.Interfaces;
 using Code.UI.Factory;
+using Code.UI.Hud;
 
 using Cysharp.Threading.Tasks;
 
 namespace Code.Infrastructure.StateMachine.States
 {
   /// <summary>
-  /// State 3 of 4.
+  /// State 4 of 5.
   ///
-  /// Exact order matters:
-  ///   1. InitializeModelServices() — grid and slots arrays are allocated.
-  ///      Must be first: ViewModels read from services the moment they are created.
-  ///   2. LoadAsync() — loads the Main scene. Scene Awake() fires here,
-  ///      but BagView / BottomSlotsView / DragIconView are plain MonoBehaviours
-  ///      with empty Awake — they wait for Construct().
-  ///   3. CreateGameplayUIAsync() — factory loads BagCanvas from Addressables,
-  ///      instantiates it, then calls Construct(viewModel) on each View.
-  ///      At this point services are ready, so ViewModel constructors are safe.
-  ///   4. GameLoopState.
+  /// Progress split:
+  ///   0.00 → 0.10  WarmUp (prefab cache)
+  ///   0.10 → 0.30  LoadForLevelAsync (resolve BagConfig + ItemPreset)
+  ///   0.30 → 0.35  InitializeModelServices (sync)
+  ///   0.35 → 0.80  LoadAsync scene (Addressables PercentComplete → mapped range)
+  ///   0.80 → 0.95  CreateUIRoot + CreateGameplayUIAsync + CreateHudAsync
+  ///   0.95 → 1.00  HideAsync curtain
   /// </summary>
   public class LoadLevelState : IGamePayloadedState<string>
   {
     public StateType Type => StateType.LoadLevel;
 
-    private readonly IGameStateMachine    _gsm;
-    private readonly ISceneLoader         _sceneLoader;
+    private readonly IGameStateMachine     _gsm;
+    private readonly ISceneLoader          _sceneLoader;
+    private readonly IStaticDataService    _staticData;
     private readonly IGridInventoryService _gridInventory;
     private readonly IBottomSlotsService   _bottomSlots;
-    private readonly IUIFactory           _uiFactory;
+    private readonly IUIFactory            _uiFactory;
+    private readonly ILoadScreen           _loadingScreen;
 
     private CancellationTokenSource _cts;
+    private HudView                  _hudView;
 
     public LoadLevelState(
       IGameStateMachine     gsm,
       ISceneLoader          sceneLoader,
+      IStaticDataService    staticData,
       IGridInventoryService gridInventory,
       IBottomSlotsService   bottomSlots,
-      IUIFactory            uiFactory)
+      IUIFactory            uiFactory,
+      ILoadScreen           loadingScreen)
     {
       _gsm           = gsm;
       _sceneLoader   = sceneLoader;
+      _staticData    = staticData;
       _gridInventory = gridInventory;
       _bottomSlots   = bottomSlots;
       _uiFactory     = uiFactory;
+      _loadingScreen = loadingScreen;
     }
 
-    public void Enter(string payload) => EnterAsync(payload).Forget();
+    public void Enter(string levelName) => EnterAsync(levelName).Forget();
 
-    private async UniTaskVoid EnterAsync(string payload)
+    private async UniTaskVoid EnterAsync(string levelName)
     {
       _cts = new CancellationTokenSource();
       var ct = _cts.Token;
 
-      // 1. Initialize domain services before anything touches them
+      _loadingScreen.SetProgress(0f);
+      await _loadingScreen.ShowAsync();
+      if (ct.IsCancellationRequested) return;
+
+      // 0 → 10 % — warm up prefab cache
+      await _uiFactory.WarmUp();
+      if (ct.IsCancellationRequested) return;
+      _loadingScreen.SetProgress(0.10f);
+
+      // 10 → 30 % — resolve per-level BagConfig and ItemPreset
+      await _staticData.LevelData.LoadForLevelAsync(levelName);
+      if (ct.IsCancellationRequested) return;
+      _loadingScreen.SetProgress(0.30f);
+
+      // 30 → 35 % — initialise domain services
+      //   IBagConfigSubservice now reads live from LevelStaticDataService.CurrentBagConfig,
+      //   so no explicit refresh needed before Initialize().
       InitializeModelServices();
+      _loadingScreen.SetProgress(0.35f);
 
-      // 2. Load the scene — Views Awake() fires here but does nothing
-      //    (no ZenjexBehaviour, no [Zenjex] fields, empty MonoBehaviour)
-      await _sceneLoader.LoadAsync(payload, ct);
+      // 35 → 80 % — load scene (sceneProgress properly forwarded to ISceneLoader)
+      var sceneProgress = new System.Progress<float>(v =>
+        _loadingScreen.SetProgress(0.35f + v * 0.45f));
 
+      await _sceneLoader.LoadAsync(levelName, ct, sceneProgress);
       if (ct.IsCancellationRequested) return;
+      _loadingScreen.SetProgress(0.80f);
 
-      // 3. Create and wire UI — safe because services are already initialized
+      // 80 → 95 % — create UI
+      _uiFactory.CreateUIRoot();
       await _uiFactory.CreateGameplayUIAsync();
-
       if (ct.IsCancellationRequested) return;
 
-      _gsm.Enter<GameLoopState>();
+      _hudView = await _uiFactory.CreateHudAsync();
+      if (ct.IsCancellationRequested) return;
+      _loadingScreen.SetProgress(0.95f);
+
+      // 95 → 100 % — hide curtain
+      await _loadingScreen.HideAsync();
+      if (ct.IsCancellationRequested) return;
+      _loadingScreen.SetProgress(1.00f);
+
+      _gsm.Enter<GameLoopState, HudView>(_hudView);
     }
 
     private void InitializeModelServices()

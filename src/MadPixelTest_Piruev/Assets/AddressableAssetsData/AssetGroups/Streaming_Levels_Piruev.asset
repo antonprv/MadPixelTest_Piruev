@@ -16,7 +16,19 @@ MonoBehaviour:
   m_GUID: 560c2ab45f294ca4c8340d3f54f01162
   m_SerializeEntries:
   - m_GUID: 8f0155b557feb7b4e8b12e060f833c7b
-    m_Address: Main
+    m_Address: Level1
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Streaming_Level
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a26f47b4c32acae4bb15eaa2336e7512
+    m_Address: MainMenu
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Streaming_Level
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: af38c9935927613409cba789fb8f5447
+    m_Address: Level2
     m_ReadOnly: 0
     m_SerializedLabels:
     - Streaming_Level

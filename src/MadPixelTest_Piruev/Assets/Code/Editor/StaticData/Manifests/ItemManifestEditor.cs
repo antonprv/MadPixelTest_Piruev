@@ -4,7 +4,9 @@
 #if UNITY_EDITOR
 using System.Collections.Generic;
 
-using Code.Data.StaticData;
+using Code.Data.StaticData.Configs;
+using Code.Data.StaticData.Manifests;
+
 using Code.Editor.Common.Manifests;
 
 using UnityEditor;

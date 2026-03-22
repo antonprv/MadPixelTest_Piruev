@@ -128,7 +128,7 @@ namespace Code.View
         .AddTo(_disposables);
 
       _bagViewModel.OnMergeAnimation
-        .Subscribe(PlayMergeEffect)
+        .Subscribe(PlayMergeAnimationAsync)
         .AddTo(_disposables);
     }
 
@@ -185,15 +185,66 @@ namespace Code.View
 
     #region Merge animation
 
-    private void PlayMergeEffect(Vector2Int origin)
+    /// <summary>
+    /// Plays a burst animation on the newly spawned merged icon.
+    /// SpawnIconAsync is async, so we wait one frame for the icon GO to exist,
+    /// then find it by the merged item's origin (BagViewModel passes origin).
+    /// </summary>
+    private async void PlayMergeAnimationAsync(Vector2Int mergedOrigin)
     {
-      if (!_cellViews.TryGetValue(origin, out var cell)) return;
+      // Wait for SpawnIconAsync to finish creating the icon GameObject
+      await UniTask.DelayFrame(1);
 
-      LeanTween
-        .scale(cell.gameObject, Vector3.one * 1.25f, 0.1f)
-        .setEaseOutQuad()
-        .setOnComplete(() =>
-          LeanTween.scale(cell.gameObject, Vector3.one, 0.15f).setEaseInBack());
+      // Find the icon by scanning _itemIcons for the item at this origin
+      GameObject iconGo = null;
+      foreach (var kvp in _itemIcons)
+      {
+        if (kvp.Key.Origin == mergedOrigin)
+        {
+          iconGo = kvp.Value;
+          break;
+        }
+      }
+
+      if (iconGo == null) return;
+
+      // Cancel any LeanTween already running on this object (e.g. spawn pop)
+      LeanTween.cancel(iconGo);
+
+      // Burst sequence:
+      //   1. Instant scale-up to 1.4 (impact frame)
+      //   2. Overshoot bounce back to 1.0 with elastic ease
+      //   3. Flash: alpha 0 → 1 on the Image
+      iconGo.transform.localScale = Vector3.one * 1.4f;
+      LeanTween.scale(iconGo, Vector3.one, 0.35f).setEaseOutElastic();
+
+      var img = iconGo.GetComponent<UnityEngine.UI.Image>();
+      if (img != null)
+      {
+        img.color = Color.white;
+        LeanTween
+          .value(iconGo, 0f, 1f, 0.25f)
+          .setEaseOutQuad()
+          .setOnUpdate(alpha =>
+          {
+            if (img != null)
+              img.color = new Color(1f, 1f, 1f, alpha);
+          });
+      }
+
+      // Cell punch — subtle scale on the occupied cells
+      if (_cellViews.TryGetValue(mergedOrigin, out var cell))
+      {
+        LeanTween.cancel(cell.gameObject);
+        LeanTween
+          .scale(cell.gameObject, Vector3.one * 1.15f, 0.08f)
+          .setEaseOutQuad()
+          .setOnComplete(() =>
+          {
+            if (cell != null)
+              LeanTween.scale(cell.gameObject, Vector3.one, 0.18f).setEaseOutBounce();
+          });
+      }
     }
 
     #endregion

@@ -3,7 +3,9 @@
 
 using System.Collections.Generic;
 
-using Code.Data.StaticData;
+using Code.Data.StaticData.Configs;
+using Code.Data.StaticData.Manifests;
+
 using Code.Infrastructure.AssetManagement;
 using Code.Infrastructure.AssetManagement.Addresses;
 using Code.Infrastructure.Services.StaticData.Interfaces;

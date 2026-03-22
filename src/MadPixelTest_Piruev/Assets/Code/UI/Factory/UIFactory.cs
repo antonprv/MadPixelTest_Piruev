@@ -3,6 +3,7 @@
 
 using Code.Infrastructure.AssetManagement;
 using Code.Infrastructure.Services;
+using Code.UI.Hud;
 using Code.View;
 using Code.ViewModel.Bag;
 using Code.ViewModel.BottomSlots;
@@ -16,10 +17,33 @@ using UnityEngine;
 
 namespace Code.UI.Factory
 {
+  /// <summary>
+  /// Creates and owns all gameplay UI.
+  ///
+  /// Object hierarchy created per level:
+  ///   UI_Root  (empty GameObject, DontDestroyOnLoad = false)
+  ///   ├── PUI_BagCanvas   (bag grid + slots + drag icon)
+  ///   └── PUI_Hud         (return-to-menu button, future HUD elements)
+  ///
+  /// All prefabs are cached in WarmUp() so instantiation is instant.
+  /// Cleanup() destroys UI_Root, which takes all children with it.
+  /// </summary>
   public class UIFactory : IUIFactory
   {
     private readonly IAssetLoader _assetLoader;
     private readonly Container    _container;
+
+    // Cached prefabs — loaded once in WarmUp
+    private GameObject _uiRootPrefab;
+    private GameObject _bagCanvasPrefab;
+    private GameObject _hudPrefab;
+
+    // Live instance — destroyed in Cleanup
+    private GameObject       _uiRoot;
+
+    // Transient ViewModels — resolved fresh each level, disposed in Cleanup
+    private IBagViewModel         _bagViewModel;
+    private IBottomSlotsViewModel _bottomSlotsViewModel;
 
     public UIFactory(IAssetLoader assetLoader, Container container)
     {
@@ -27,36 +51,77 @@ namespace Code.UI.Factory
       _container   = container;
     }
 
+    // ── WarmUp ────────────────────────────────────────────────────────────
+
+    public async UniTask WarmUp()
+    {
+      (_uiRootPrefab, _bagCanvasPrefab, _hudPrefab) = await UniTask.WhenAll(
+        _assetLoader.LoadAsync<GameObject>(BagAssetAddresses.UIRootAddress),
+        _assetLoader.LoadAsync<GameObject>(BagAssetAddresses.BagCanvasAddress),
+        _assetLoader.LoadAsync<GameObject>(BagAssetAddresses.HudAddress));
+    }
+
+    // ── UIRoot ────────────────────────────────────────────────────────────
+
+    public void CreateUIRoot()
+    {
+      _uiRoot = Object.Instantiate(_uiRootPrefab);
+      _uiRoot.name = "UI_Root";
+    }
+
+    // ── BagCanvas ─────────────────────────────────────────────────────────
+
     public async UniTask CreateGameplayUIAsync()
     {
-      var prefab = await _assetLoader.LoadAsync<GameObject>(BagAssetAddresses.BagCanvasAddress);
-      var canvas = Object.Instantiate(prefab);
+      var canvas = Object.Instantiate(_bagCanvasPrefab, _uiRoot.transform);
 
-      var bagViewModel         = _container.Resolve<IBagViewModel>();
-      var bottomSlotsViewModel = _container.Resolve<IBottomSlotsViewModel>();
-      var dragIconViewModel    = _container.Resolve<IDragIconViewModel>();
+      _bagViewModel         = _container.Resolve<IBagViewModel>();
+      _bottomSlotsViewModel = _container.Resolve<IBottomSlotsViewModel>();
+      var dragIconViewModel = _container.Resolve<IDragIconViewModel>();
 
-      // BagView needs assetLoader to load item icons
       var bagView = canvas.GetComponentInChildren<BagView>(includeInactive: true);
-      bagView.Construct(bagViewModel, _assetLoader);
+      bagView.Construct(_bagViewModel, _assetLoader);
 
-      // BottomSlotsView also acts as ISlotScreenPositionProvider —
-      // register it in the container so DragDropPresenter can resolve it
       var bottomSlotsView = canvas.GetComponentInChildren<BottomSlotsView>(includeInactive: true);
-      bottomSlotsView.Construct(bottomSlotsViewModel);
+      bottomSlotsView.Construct(_bottomSlotsViewModel);
 
-      // Register the position provider so DragDropPresenter can use it
-      // (late binding after container was built — use RootContext if available,
-      //  otherwise store on a static/singleton helper)
       SlotPositionProviderLocator.Register(bottomSlotsView);
 
-      // DragIconView needs grid metrics to size the drag icon at ½ footprint
-      // Read them from the already-constructed BagView
       float step    = bagView.CellStep;
       float spacing = bagView.CellSpacing;
 
       var dragIconView = canvas.GetComponentInChildren<DragIconView>(includeInactive: true);
       dragIconView.Construct(dragIconViewModel, step, spacing);
+
+      await UniTask.CompletedTask;
+    }
+
+    // ── HUD ───────────────────────────────────────────────────────────────
+
+    public async UniTask<HudView> CreateHudAsync()
+    {
+      var hud     = Object.Instantiate(_hudPrefab, _uiRoot.transform);
+      var hudView = hud.GetComponent<HudView>();
+
+      await UniTask.CompletedTask;
+      return hudView;
+    }
+
+    // ── Cleanup ───────────────────────────────────────────────────────────
+
+    public void Cleanup()
+    {
+      if (_uiRoot != null)
+        Object.Destroy(_uiRoot);
+
+      _uiRoot = null;
+      SlotPositionProviderLocator.Register(null);
+
+      // Dispose transient ViewModels — they hold R3 Subjects and CompositeDisposables
+      (_bagViewModel as BagViewModel)?.Dispose();
+      (_bottomSlotsViewModel as BottomSlotsViewModel)?.Dispose();
+      _bagViewModel         = null;
+      _bottomSlotsViewModel = null;
     }
   }
 }

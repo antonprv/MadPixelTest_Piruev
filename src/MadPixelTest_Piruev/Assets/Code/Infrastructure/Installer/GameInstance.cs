@@ -1,6 +1,8 @@
 // Created by Anton Piruev in 2026. 
 // Any direct commercial use of derivative work is strictly prohibited.
 
+using System;
+
 using Code.Common.Extensions.Async;
 using Code.Infrastructure.StateMachine;
 using Code.Infrastructure.StateMachine.States;
@@ -23,7 +25,11 @@ namespace Code.Infrastructure.Installer
     {
       base.OnAwake();
       RegisterSingletone();
+      SetupFramerate();
     }
+
+    private void SetupFramerate() =>
+      Application.targetFrameRate = 120;
 
     public void LaunchGame() => StartGame();
 

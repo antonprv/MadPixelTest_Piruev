@@ -27,6 +27,12 @@ MonoBehaviour:
     m_SerializedLabels:
     - Streaming_UI
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 351e649515c6e714d854eced34f7137c
+    m_Address: PUI_Hud
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Streaming_UI
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 7159e46df4e417e4cafc7bb2d7670514
     m_Address: PUI_Slot
     m_ReadOnly: 0

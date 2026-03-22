@@ -35,18 +35,6 @@ using Zenjex.Extensions.Core;
 
 namespace Code.Infrastructure.Installer
 {
-  /// <summary>
-  /// Root DI installer.
-  ///
-  /// Registration order mirrors the MVP+MVVM architecture:
-  ///   1. Infrastructure      (logging, assets, scene loading, time)
-  ///   2. Static data         (StaticDataService + subservices)
-  ///   3. Domain services     (Model / domain)
-  ///   4. MVP Presenters      (mediation layer)
-  ///   5. MVVM ViewModels     (UI state layer)
-  ///   6. UI Factory
-  ///   7. GSM                 (game state machine)
-  /// </summary>
   public class GameInstaller : ProjectRootInstaller
   {
     private GameInstance _gameInstance;
@@ -114,14 +102,35 @@ namespace Code.Infrastructure.Installer
 
     private void BindStaticData(ContainerBuilder builder)
     {
-      builder.Bind<IBagConfigSubservice>().To<BagConfigSubservice>().AsSingle();
-      builder.Bind<IItemDataSubservice>().To<ItemDataSubservice>().AsSingle();
-      builder.Bind<IStaticDataService>().To<StaticDataService>().AsSingle();
+      // Per-level bag layout + startup items — loaded per level in LoadLevelState.
+      // Registered first because LevelBagConfigSubservice depends on it.
+      builder
+        .Bind<ILevelStaticDataService>()
+        .To<LevelStaticDataService>()
+        .AsSingle();
+
+      // IBagConfigSubservice delegates live to ILevelStaticDataService.CurrentBagConfig.
+      // No global BagConfig address is loaded — each level brings its own.
+      builder
+        .Bind<IBagConfigSubservice>()
+        .To<LevelBagConfigSubservice>()
+        .AsSingle();
+
+      // Global item catalogue — loaded once in PreloadAssetsState.
+      builder
+        .Bind<IItemDataSubservice>()
+        .To<ItemDataSubservice>()
+        .AsSingle();
+
+      builder
+        .Bind<IStaticDataService>()
+        .To<StaticDataService>()
+        .AsSingle();
     }
 
     #endregion
 
-    #region Domain services (Model layer)
+    #region Domain services
 
     private void BindDomainServices(ContainerBuilder builder)
     {
@@ -157,11 +166,16 @@ namespace Code.Infrastructure.Installer
 
     private void BindViewModels(ContainerBuilder builder)
     {
-      // ViewModels are resolved lazily by UIFactory via Container.Resolve<T>(),
-      // so they are created only after InitializeModelServices() in LoadLevelState.
+      // DragIconViewModel is stateless between levels — keep as singleton.
       builder.Bind<IDragIconViewModel>().To<DragIconViewModel>().AsSingle();
-      builder.Bind<IBagViewModel>().To<BagViewModel>().AsSingle();
-      builder.Bind<IBottomSlotsViewModel>().To<BottomSlotsViewModel>().AsSingle();
+
+      // BagViewModel and BottomSlotsViewModel cache IBagConfigSubservice values
+      // (GridSize, ActiveCells, BottomSlotCount) in their constructors.
+      // Because IBagConfigSubservice is level-specific, these ViewModels must be
+      // recreated on every level load so they read the correct level's config.
+      // UIFactory resolves them fresh via Container.Resolve<T>() each time.
+      builder.Bind<IBagViewModel>().To<BagViewModel>().AsTransient();
+      builder.Bind<IBottomSlotsViewModel>().To<BottomSlotsViewModel>().AsTransient();
     }
 
     #endregion
@@ -182,6 +196,7 @@ namespace Code.Infrastructure.Installer
 
       builder.Bind<BootstrapState>().AsTransient();
       builder.Bind<PreloadAssetsState>().AsTransient();
+      builder.Bind<MainMenuState>().AsTransient();
       builder.Bind<LoadLevelState>().AsTransient();
       builder.Bind<GameLoopState>().AsTransient();
     }

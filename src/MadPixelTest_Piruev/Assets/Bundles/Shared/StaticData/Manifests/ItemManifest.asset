@@ -14,21 +14,33 @@ MonoBehaviour:
   m_EditorClassIdentifier: Code.Data.StaticData::Code.Data.StaticData.ItemManifest
   Items:
     keyData:
-    - shield
-    - sword
+    - potion
+    - scythe_lv1
+    - scythe_lv2
+    - sword_lv1
     - sword_lv2
     valueData:
+    - m_AssetGUID: 769c46c3c154e794d9169df844f306f4
+      m_SubObjectName: 
+      m_SubObjectType: 
+      m_SubObjectGUID: 
+      m_EditorAssetChanged: 0
     - m_AssetGUID: 165923749062642488880afba9c888c6
       m_SubObjectName: 
       m_SubObjectType: 
       m_SubObjectGUID: 
       m_EditorAssetChanged: 0
-    - m_AssetGUID: 6c4b4b9324f0d4c4182b15626576d6a5
+    - m_AssetGUID: e01d8fa30bafe894fa8dc2c2620b8fd6
       m_SubObjectName: 
       m_SubObjectType: 
       m_SubObjectGUID: 
       m_EditorAssetChanged: 0
     - m_AssetGUID: 8d2b5ca9b3476194583702cf1a7b8a3f
+      m_SubObjectName: 
+      m_SubObjectType: 
+      m_SubObjectGUID: 
+      m_EditorAssetChanged: 0
+    - m_AssetGUID: 4ca1dc9a189a6944f99bb5fc2f9bd956
       m_SubObjectName: 
       m_SubObjectType: 
       m_SubObjectGUID: 

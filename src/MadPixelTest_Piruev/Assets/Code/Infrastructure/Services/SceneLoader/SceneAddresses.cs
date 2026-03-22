@@ -19,10 +19,8 @@ namespace Code.Infrastructure.SceneLoader
     /// </summary>
     public const string InitialAddress = "Initial";
 
-    /// <summary>
-    /// Main gameplay scene — bag inventory lives here.
-    /// All gameplay happens in this scene.
-    /// </summary>
-    public const string MainAddress = "Main";
+    public const string Level1Address = "Level1";
+    public const string Level2Address = "Level2";
+    public const string MainMenuAddress = "MainMenu";
   }
 }

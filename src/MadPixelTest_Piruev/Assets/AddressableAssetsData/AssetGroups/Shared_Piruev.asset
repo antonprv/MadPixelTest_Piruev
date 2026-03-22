@@ -15,8 +15,14 @@ MonoBehaviour:
   m_GroupName: Shared_Piruev
   m_GUID: 6eada6d5d9b894d41b42f0189b6e9c9a
   m_SerializeEntries:
-  - m_GUID: 116d425622b0b404cb0c8ba64cb936aa
-    m_Address: BagConfig
+  - m_GUID: 366fa7c37c4438f45be60aabc693e3e3
+    m_Address: LevelBagManifest
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Shared
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 57781ec360bc8cc44a0c79b646b9cf0b
+    m_Address: LevelItemPresetManifest
     m_ReadOnly: 0
     m_SerializedLabels:
     - Shared

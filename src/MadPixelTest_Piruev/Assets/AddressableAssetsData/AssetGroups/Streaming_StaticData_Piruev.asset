@@ -15,6 +15,18 @@ MonoBehaviour:
   m_GroupName: Streaming_StaticData_Piruev
   m_GUID: 7602afaba8bb7dc43898406ab180c2e9
   m_SerializeEntries:
+  - m_GUID: 1d8c8a4a012ddd047bb6552e7b75f72f
+    m_Address: ItemLists
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Streaming_StaticData
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4642ca37a8dc94448bb0df91256b07a6
+    m_Address: BagConfigs
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Streaming_StaticData
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: cae37c4355a48ba42bab929dc6fcf4c4
     m_Address: Items
     m_ReadOnly: 0

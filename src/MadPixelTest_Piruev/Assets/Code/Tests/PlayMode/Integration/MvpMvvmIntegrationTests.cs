@@ -3,8 +3,10 @@
 
 using System.Collections.Generic;
 
-using Code.Data.StaticData;
+using Code.Data.StaticData.Configs;
+
 using Code.Infrastructure.AssetManagement;
+using Code.Infrastructure.Services;
 using Code.Infrastructure.Services.StaticData.Interfaces;
 using Code.Model.Core;
 using Code.Model.Services.BottomSlots;
@@ -33,6 +35,10 @@ namespace Code.Tests.PlayMode.Integration
   /// All services + presenters + viewmodels are real instances.
   /// IAssetLoader is mocked (requires Addressables runtime).
   /// IBagConfigSubservice is mocked — keeps tests independent of ScriptableObject assets.
+  ///
+  /// Key invariant after the visual refactor:
+  ///   CellViewModel.BackgroundColor is ALWAYS emptyColor — it never changes.
+  ///   Item presence is indicated by ItemOverlayColor (clear when empty, ItemColor when occupied).
   /// </summary>
   [TestFixture]
   public class MvpMvvmIntegrationTests
@@ -47,6 +53,8 @@ namespace Code.Tests.PlayMode.Integration
     private DragIconViewModel    _dragIconVm;
     private DragDropPresenter    _dragDropPresenter;
     private BagViewModel         _bagViewModel;
+
+    private static readonly Color EmptyColor = new(0.15f, 0.15f, 0.15f, 0.6f);
 
     #endregion
 
@@ -69,9 +77,11 @@ namespace Code.Tests.PlayMode.Integration
     {
       _assetLoader = Substitute.For<IAssetLoader>();
 
+      // Clear locator between tests
+      SlotPositionProviderLocator.Register(null);
+
       var bagConfig = MakeBagConfig(5, 7, 5);
 
-      // Services (Model layer)
       _inventoryService = new GridInventoryService(bagConfig);
       _slotsService     = new BottomSlotsService(bagConfig);
       _inventoryService.Initialize();
@@ -79,7 +89,6 @@ namespace Code.Tests.PlayMode.Integration
 
       _dragDropService = new GridDragDropService(_inventoryService, _slotsService);
 
-      // MVP Presenters
       _bagPresenter   = new BagPresenter(_inventoryService);
       _slotsPresenter = new BottomSlotsPresenter(_slotsService);
       _dragIconVm     = new DragIconViewModel();
@@ -87,11 +96,9 @@ namespace Code.Tests.PlayMode.Integration
       _dragDropPresenter = new DragDropPresenter(
         _bagPresenter, _slotsPresenter, _dragDropService, _dragIconVm, _assetLoader);
 
-      // ViewModels
       _bagViewModel = new BagViewModel(
         bagConfig, _bagPresenter, _dragDropPresenter, _assetLoader);
 
-      // Item configs
       _singleLv2 = MakeCfg("s_lv2", 2, new List<Vector2Int> { Vector2Int.zero });
       _singleLv1 = MakeCfg("s_lv1", 1,
         new List<Vector2Int> { Vector2Int.zero }, merge: _singleLv2);
@@ -100,13 +107,18 @@ namespace Code.Tests.PlayMode.Integration
     }
 
     [TearDown]
-    public void TearDown() => _bagViewModel.Dispose();
+    public void TearDown()
+    {
+      _bagViewModel.Dispose();
+      SlotPositionProviderLocator.Register(null);
+    }
 
-    #region Drag from slot → drop in bag
+    // ── Drag from slot → drop in bag ───────────────────────────────────────
 
     [Test]
-    public void DragFromSlot_DropInBag_CellViewModelReflectsNewItem()
+    public void DragFromSlot_DropInBag_CellOverlayReflectsNewItem()
     {
+      // Background is always emptyColor — check overlay instead
       var item   = new InventoryItem(_singleLv1, Vector2Int.zero);
       var target = new Vector2Int(2, 3);
       _slotsService.TryPlace(item, 0);
@@ -115,12 +127,25 @@ namespace Code.Tests.PlayMode.Integration
       _dragDropPresenter.HandleDropOnCell(target);
 
       var cellVm = (CellViewModel)_bagViewModel.GetCellViewModel(target);
-      Assert.AreEqual(_singleLv1.ItemColor, cellVm.BackgroundColor.CurrentValue);
+      Assert.AreEqual(_singleLv1.ItemColor, cellVm.ItemOverlayColor.CurrentValue);
     }
 
-    #endregion
+    [Test]
+    public void DragFromSlot_DropInBag_BackgroundRemainsEmptyColor()
+    {
+      // Background must NEVER change regardless of item placement
+      var item   = new InventoryItem(_singleLv1, Vector2Int.zero);
+      var target = new Vector2Int(2, 3);
+      _slotsService.TryPlace(item, 0);
 
-    #region Merge triggers animation
+      _dragDropPresenter.StartDragFromSlot(0, Vector2.zero);
+      _dragDropPresenter.HandleDropOnCell(target);
+
+      var cellVm = (CellViewModel)_bagViewModel.GetCellViewModel(target);
+      Assert.AreEqual(EmptyColor, cellVm.BackgroundColor.CurrentValue);
+    }
+
+    // ── Merge triggers animation ───────────────────────────────────────────
 
     [Test]
     public void Merge_TriggersMergeAnimation_OnBagViewModel()
@@ -141,9 +166,7 @@ namespace Code.Tests.PlayMode.Integration
       Assert.AreEqual(new Vector2Int(0, 0), animOrigin.Value);
     }
 
-    #endregion
-
-    #region Highlight routing
+    // ── Highlight routing ──────────────────────────────────────────────────
 
     [Test]
     public void PointerEnterCell_CanPlace_SetsValidHighlightOnCellViewModel()
@@ -166,23 +189,20 @@ namespace Code.Tests.PlayMode.Integration
       bagVm.Dispose();
     }
 
-    #endregion
-
-    #region DragIconViewModel state
+    // ── DragIconViewModel state ────────────────────────────────────────────
 
     [Test]
-    public void HandleEndDrag_HidesDragIconViewModel()
+    public void HandleEndDrag_WhenNotDragging_HidesDragIconViewModel()
     {
+      // No drag active — HandleEndDrag should call Hide immediately
       _dragDropPresenter.HandleEndDrag();
       Assert.IsFalse(_dragIconVm.IsVisible.CurrentValue);
     }
 
-    #endregion
-
-    #region CancelDrag clears drag state
+    // ── ItemOverlayColor on cancel ─────────────────────────────────────────
 
     [Test]
-    public void CancelDrag_FromBag_ItemReturnsToBag_CellVmReflects()
+    public void CancelDrag_FromBag_ItemReturnsToBag_OverlayReflectsItem()
     {
       var origin = new Vector2Int(0, 0);
       var item   = new InventoryItem(_singleLv1, origin);
@@ -191,18 +211,55 @@ namespace Code.Tests.PlayMode.Integration
       _dragDropPresenter.StartDragFromBag(origin, Vector2.zero);
       _dragDropService.CancelDrag();
 
-      var cellVm = _bagViewModel.GetCellViewModel(origin);
-      Assert.AreEqual(_singleLv1.ItemColor, cellVm.BackgroundColor.CurrentValue);
+      var cellVm = (CellViewModel)_bagViewModel.GetCellViewModel(origin);
+      // Item returned to bag → overlay shows item color
+      Assert.AreEqual(_singleLv1.ItemColor, cellVm.ItemOverlayColor.CurrentValue);
     }
 
-    #endregion
+    [Test]
+    public void CancelDrag_FromBag_BackgroundAlwaysEmptyColor()
+    {
+      var origin = new Vector2Int(0, 0);
+      var item   = new InventoryItem(_singleLv1, origin);
+      _inventoryService.TryPlace(item);
 
-    #region Helpers
+      _dragDropPresenter.StartDragFromBag(origin, Vector2.zero);
+      _dragDropService.CancelDrag();
 
-    /// <summary>
-    /// Returns a mock IBagConfigSubservice configured with the given dimensions.
-    /// GetActiveCellsSet() returns the full w×h rectangle (no custom shape).
-    /// </summary>
+      var cellVm = (CellViewModel)_bagViewModel.GetCellViewModel(origin);
+      Assert.AreEqual(EmptyColor, cellVm.BackgroundColor.CurrentValue);
+    }
+
+    // ── OnItemPlaced / OnItemRemoved on BagViewModel ───────────────────────
+
+    [Test]
+    public void BagViewModel_OnItemPlaced_FiresWhenItemPlaced()
+    {
+      InventoryItem received = null;
+      _bagViewModel.OnItemPlaced.Subscribe(i => received = i);
+
+      var item = new InventoryItem(_singleLv1, Vector2Int.zero);
+      _inventoryService.TryPlace(item);
+
+      Assert.AreSame(item, received);
+    }
+
+    [Test]
+    public void BagViewModel_OnItemRemoved_FiresWhenItemRemoved()
+    {
+      var item = new InventoryItem(_singleLv1, Vector2Int.zero);
+      _inventoryService.TryPlace(item);
+
+      InventoryItem received = null;
+      _bagViewModel.OnItemRemoved.Subscribe(i => received = i);
+
+      _inventoryService.TryRemove(item);
+
+      Assert.AreSame(item, received);
+    }
+
+    // ── Helpers ────────────────────────────────────────────────────────────
+
     private static IBagConfigSubservice MakeBagConfig(int w, int h, int slots)
     {
       var mock = Substitute.For<IBagConfigSubservice>();
@@ -216,7 +273,6 @@ namespace Code.Tests.PlayMode.Integration
         for (int y = 0; y < h; y++)
           cells.Add(new Vector2Int(x, y));
       mock.GetActiveCellsSet().Returns(cells);
-
       return mock;
     }
 
@@ -236,7 +292,5 @@ namespace Code.Tests.PlayMode.Integration
       Set("ItemColor",   Color.white);
       return cfg;
     }
-
-    #endregion
   }
 }

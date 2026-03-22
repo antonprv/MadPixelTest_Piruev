@@ -9,28 +9,36 @@ namespace Code.Infrastructure.Services.StaticData
 {
   /// <summary>
   /// Root static-data service.
-  /// Aggregates subservices and exposes a single LoadAllAsync entry point
-  /// so the state machine only needs to know about IStaticDataService.
   ///
-  /// Loading order matters: BagConfig and ItemManifest are independent,
-  /// so they are loaded in parallel via UniTask.WhenAll.
+  /// Two independent sets of data:
+  ///   1. BagConfig + ItemManifest — global, loaded once in PreloadAssetsState.
+  ///   2. LevelData (LevelBagManifest + LevelItemPresetManifest) — manifests
+  ///      loaded in PreloadAssetsState; per-level assets resolved in LoadLevelState.
+  ///
+  /// Domain services that need bag dimensions use IBagConfigSubservice (per-level, via LevelBagConfigSubservice).
+  /// Domain services that need per-level data use ILevelStaticDataService.
+  /// They are two separate services — no coupling between them.
   /// </summary>
   public class StaticDataService : IStaticDataService
   {
-    public IBagConfigSubservice BagConfig { get; }
-    public IItemDataSubservice  ItemData  { get; }
+    public IBagConfigSubservice    BagConfig { get; }
+    public IItemDataSubservice     ItemData  { get; }
+    public ILevelStaticDataService LevelData { get; }
 
     public StaticDataService(
-      IBagConfigSubservice bagConfig,
-      IItemDataSubservice  itemData)
+      IBagConfigSubservice    bagConfig,
+      IItemDataSubservice     itemData,
+      ILevelStaticDataService levelData)
     {
       BagConfig = bagConfig;
       ItemData  = itemData;
+      LevelData = levelData;
     }
 
     public async UniTask LoadAllAsync() =>
       await UniTask.WhenAll(
         BagConfig.LoadSelfAsync(),
-        ItemData.LoadSelfAsync());
+        ItemData.LoadSelfAsync(),
+        LevelData.LoadManifestsAsync());
   }
 }

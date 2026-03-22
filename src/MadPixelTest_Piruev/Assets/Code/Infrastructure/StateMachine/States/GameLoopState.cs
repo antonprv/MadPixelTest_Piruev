@@ -5,90 +5,97 @@ using Code.Common.Extensions.Logging;
 using Code.Infrastructure.StateMachine.States.Interfaces;
 using Code.Infrastructure.StateMachine.States.Types;
 using Code.Model.Core;
-using Code.Model.Services.Inventory.Interfaces;
 using Code.Model.Services.Startup;
 using Code.Presenter.Bag;
+using Code.UI.Factory;
+using Code.UI.Hud;
 
 using R3;
 
 namespace Code.Infrastructure.StateMachine.States
 {
   /// <summary>
-  /// State 4 of 4 — active gameplay.
+  /// State 5 of 5 — active gameplay.
   ///
-  /// On Enter:
-  ///   1. IStartupItemsService.PlaceStartupItems() — fills inventory with
-  ///      starter items from the manifest. Safe to call here because
-  ///      LoadLevelState already called InitializeModelServices() before
-  ///      transitioning to this state.
-  ///   2. Subscribes to IBagPresenter events for game-level reactions
-  ///      (analytics, sound, quests — currently just logging).
+  /// Receives HudView as payload from LoadLevelState.
+  /// Subscribes to HudView.OnReturnClicked → calls UIFactory.Cleanup()
+  /// and transitions to MainMenuState.
   /// </summary>
-  public class GameLoopState : IGameState
+  public class GameLoopState : IGamePayloadedState<HudView>
   {
     public StateType Type => StateType.GameLoop;
 
-    private readonly IBagPresenter        _bagPresenter;
+    private readonly IGameStateMachine   _gsm;
+    private readonly IBagPresenter       _bagPresenter;
     private readonly IStartupItemsService _startupItems;
-    private readonly IGameLog             _logger;
+    private readonly IUIFactory          _uiFactory;
+    private readonly IGameLog            _logger;
 
     private CompositeDisposable _disposables;
+    private HudView              _hudView;
 
     public GameLoopState(
+      IGameStateMachine    gsm,
       IBagPresenter        bagPresenter,
       IStartupItemsService startupItems,
+      IUIFactory           uiFactory,
       IGameLog             logger)
     {
+      _gsm          = gsm;
       _bagPresenter = bagPresenter;
       _startupItems = startupItems;
+      _uiFactory    = uiFactory;
       _logger       = logger;
     }
 
-    public void Enter()
+    public void Enter(HudView hudView)
     {
+      _hudView     = hudView;
       _disposables = new CompositeDisposable();
 
       _startupItems.PlaceStartupItems();
-
       SubscribeToInventory();
+
+      if (_hudView != null)
+        _hudView.OnReturnClicked += OnReturnToMenuClicked;
+      else
+        _logger.Log("HudView is null — return button unavailable.");
     }
 
     public void Exit()
     {
+      if (_hudView != null)
+        _hudView.OnReturnClicked -= OnReturnToMenuClicked;
+
       _disposables?.Dispose();
       _disposables = null;
+      _hudView     = null;
     }
 
-    #region R3 subscriptions
+    // ── Return to menu ─────────────────────────────────────────────────────
+
+    private void OnReturnToMenuClicked()
+    {
+      // Cleanup destroys UI_Root + all children (BagCanvas, HUD)
+      _uiFactory.Cleanup();
+      _gsm.Enter<MainMenuState>();
+    }
+
+    // ── Inventory subscriptions ────────────────────────────────────────────
 
     private void SubscribeToInventory()
     {
       _bagPresenter.OnItemPlaced
-        .Subscribe(OnItemPlaced)
+        .Subscribe(item => _logger.Log($"[GameLoop] Placed: {item.Config.ItemId} at {item.Origin}"))
         .AddTo(_disposables);
 
       _bagPresenter.OnItemRemoved
-        .Subscribe(OnItemRemoved)
+        .Subscribe(item => _logger.Log($"[GameLoop] Removed: {item.Config.ItemId}"))
         .AddTo(_disposables);
 
       _bagPresenter.OnItemsMerged
-        .Subscribe(OnItemsMerged)
+        .Subscribe(r => _logger.Log($"[GameLoop] Merged → {r.Result.Config.ItemId} (Lv{r.Result.Config.Level})"))
         .AddTo(_disposables);
     }
-
-    #endregion
-
-    #region Handlers (extension points)
-
-    private void OnItemPlaced(InventoryItem item) =>
-      _logger.Log($"[GameLoop] Placed: {item.Config.ItemId} at {item.Origin}");
-
-    private void OnItemRemoved(InventoryItem item) =>
-      _logger.Log($"[GameLoop] Removed: {item.Config.ItemId}");
-
-    private void OnItemsMerged(MergeResult result) =>
-      _logger.Log($"[GameLoop] Merged → {result.Result.Config.ItemId} (Lv{result.Result.Config.Level})");
-
-    #endregion
   }
 }

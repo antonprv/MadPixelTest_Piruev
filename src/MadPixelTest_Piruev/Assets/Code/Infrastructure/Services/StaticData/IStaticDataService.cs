@@ -9,12 +9,13 @@ namespace Code.Infrastructure.Services.StaticData
 {
   public interface IStaticDataService
   {
-    IBagConfigSubservice BagConfig { get; }
-    IItemDataSubservice  ItemData  { get; }
+    IBagConfigSubservice    BagConfig { get; }
+    IItemDataSubservice     ItemData  { get; }
+    ILevelStaticDataService LevelData { get; }
 
     /// <summary>
-    /// Loads all static data required before gameplay starts.
-    /// Called once in PreloadAssetsState, before icon preloading.
+    /// Loads all static data required before gameplay.
+    /// Called once in PreloadAssetsState.
     /// </summary>
     UniTask LoadAllAsync();
   }

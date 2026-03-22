@@ -3,7 +3,7 @@
 
 using System.Collections.Generic;
 
-using Code.Data.StaticData;
+using Code.Data.StaticData.Configs;
 
 using UnityEngine;
 

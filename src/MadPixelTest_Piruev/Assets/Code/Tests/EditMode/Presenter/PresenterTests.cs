@@ -3,7 +3,10 @@
 
 using System.Collections.Generic;
 
-using Code.Data.StaticData;
+using Code.Data.StaticData.Configs;
+
+using Code.Infrastructure.AssetManagement;
+using Code.Infrastructure.Services;
 using Code.Model.Core;
 using Code.Model.Services.BottomSlots.Interfaces;
 using Code.Model.Services.DragDrop.Interfaces;
@@ -29,7 +32,7 @@ namespace Code.Tests.EditMode.Presenter
   [TestFixture]
   public class BottomSlotsPresenterTests
   {
-    private IBottomSlotsService _slotsService;
+    private IBottomSlotsService  _slotsService;
     private BottomSlotsPresenter _presenter;
 
     [SetUp]
@@ -38,7 +41,6 @@ namespace Code.Tests.EditMode.Presenter
       _slotsService = Substitute.For<IBottomSlotsService>();
       _slotsService.OnSlotChanged.Returns(Observable.Empty<int>());
       _slotsService.SlotCount.Returns(5);
-
       _presenter = new BottomSlotsPresenter(_slotsService);
     }
 
@@ -122,6 +124,7 @@ namespace Code.Tests.EditMode.Presenter
       return new InventoryItem(cfg, Vector2Int.zero);
     }
   }
+
   #endregion
 
   #region DragDropPresenter
@@ -129,34 +132,39 @@ namespace Code.Tests.EditMode.Presenter
   [TestFixture]
   public class DragDropPresenterTests
   {
-    private IBagPresenter _bagPresenter;
-    private IBottomSlotsPresenter _slotsPresenter;
-    private IGridDragDropService _dragDropService;
-    private IDragIconViewModel _dragIconViewModel;
-    private DragDropPresenter _presenter;
+    private IBagPresenter         _bagPresenter;
+    private IBottomSlotsPresenter  _slotsPresenter;
+    private IGridDragDropService   _dragDropService;
+    private IDragIconViewModel     _dragIconViewModel;
+    private DragDropPresenter      _presenter;
 
     [SetUp]
     public void SetUp()
     {
-      _bagPresenter = Substitute.For<IBagPresenter>();
-      _slotsPresenter = Substitute.For<IBottomSlotsPresenter>();
-      _dragDropService = Substitute.For<IGridDragDropService>();
+      _bagPresenter      = Substitute.For<IBagPresenter>();
+      _slotsPresenter    = Substitute.For<IBottomSlotsPresenter>();
+      _dragDropService   = Substitute.For<IGridDragDropService>();
       _dragIconViewModel = Substitute.For<IDragIconViewModel>();
 
-      // Observable stubs
       _bagPresenter.OnItemPlaced.Returns(Observable.Empty<InventoryItem>());
       _bagPresenter.OnItemRemoved.Returns(Observable.Empty<InventoryItem>());
       _bagPresenter.OnItemsMerged.Returns(Observable.Empty<MergeResult>());
+
+      // Clear the locator — tests don't need a real slot position provider
+      SlotPositionProviderLocator.Register(null);
 
       _presenter = new DragDropPresenter(
         _bagPresenter,
         _slotsPresenter,
         _dragDropService,
         _dragIconViewModel,
-        Substitute.For<Code.Infrastructure.AssetManagement.IAssetLoader>());
+        Substitute.For<IAssetLoader>());
     }
 
-    #region StartDragFromBag
+    [TearDown]
+    public void TearDown() => SlotPositionProviderLocator.Register(null);
+
+    // ── StartDragFromBag ───────────────────────────────────────────────────
 
     [Test]
     public void StartDragFromBag_NullItem_DoesNotStartDrag()
@@ -174,36 +182,32 @@ namespace Code.Tests.EditMode.Presenter
     public void StartDragFromBag_ValidItem_RemovesFromBagAndStartsDrag()
     {
       var origin = new Vector2Int(2, 3);
-      var item = MakeItem(origin);
+      var item   = MakeItem(origin);
       _bagPresenter.GetItemAt(origin).Returns(item);
       _bagPresenter.TryRemove(item).Returns(true);
 
       _presenter.StartDragFromBag(origin, Vector2.zero);
 
       _bagPresenter.Received(1).TryRemove(item);
-      _dragDropService.Received(1).StartDrag(
-        item, DragSource.Bag, Vector2Int.zero, -1);
+      _dragDropService.Received(1).StartDrag(item, DragSource.Bag, Vector2Int.zero, -1);
     }
 
     [Test]
     public void StartDragFromBag_DragOffset_CalculatedFromCellMinusOrigin()
     {
-      var origin = new Vector2Int(1, 1);
+      var origin   = new Vector2Int(1, 1);
       var grabCell = new Vector2Int(2, 2);
-      var item = MakeItem(origin);
+      var item     = MakeItem(origin);
       _bagPresenter.GetItemAt(grabCell).Returns(item);
       _bagPresenter.TryRemove(item).Returns(true);
 
       _presenter.StartDragFromBag(grabCell, Vector2.zero);
 
-      var expectedOffset = grabCell - origin; // (1,1)
       _dragDropService.Received(1).StartDrag(
-        item, DragSource.Bag, expectedOffset, -1);
+        item, DragSource.Bag, grabCell - origin, -1);
     }
 
-    #endregion
-
-    #region StartDragFromSlot
+    // ── StartDragFromSlot ──────────────────────────────────────────────────
 
     [Test]
     public void StartDragFromSlot_FailedRemove_DoesNotStartDrag()
@@ -230,9 +234,7 @@ namespace Code.Tests.EditMode.Presenter
         item, DragSource.BottomSlot, Vector2Int.zero, 2);
     }
 
-    #endregion
-
-    #region UpdateDragPosition
+    // ── UpdateDragPosition ─────────────────────────────────────────────────
 
     [Test]
     public void UpdateDragPosition_DelegatesToDragIconViewModel()
@@ -242,12 +244,10 @@ namespace Code.Tests.EditMode.Presenter
       _dragIconViewModel.Received(1).UpdatePosition(pos);
     }
 
-    #endregion
-
-    #region HandleEndDrag
+    // ── HandleEndDrag ──────────────────────────────────────────────────────
 
     [Test]
-    public void HandleEndDrag_HidesDragIcon()
+    public void HandleEndDrag_NotDragging_CallsHide()
     {
       _dragDropService.IsDragging.Returns(false);
       _presenter.HandleEndDrag();
@@ -255,18 +255,21 @@ namespace Code.Tests.EditMode.Presenter
     }
 
     [Test]
-    public void HandleEndDrag_BagSource_FreeSlotsAvailable_EndsAndPlacesInSlot()
+    public void HandleEndDrag_BagSource_FreeSlotsAvailable_CallsFlyTo()
     {
+      // When there's a free slot, icon flies to that slot (FlyTo) not Hide
       var item = MakeItem();
       _dragDropService.IsDragging.Returns(true);
       _dragDropService.Source.Returns(DragSource.Bag);
       _dragDropService.DraggedItem.Returns(item);
-      _slotsPresenter.TryPlaceInFirstFreeSlot(item, out Arg.Any<int>()).Returns(true);
+      _slotsPresenter.TryPlaceInFirstFreeSlot(item, out Arg.Any<int>())
+        .Returns(ci => { ci[1] = 0; return true; });
 
       _presenter.HandleEndDrag();
 
-      _slotsPresenter.Received(1).TryPlaceInFirstFreeSlot(item, out Arg.Any<int>());
       _dragDropService.Received(1).EndDrag();
+      // FlyTo called (locator returns null → falls back to Hide in FlyIconToSlot)
+      _dragIconViewModel.Received(1).Hide();
     }
 
     [Test]
@@ -281,22 +284,22 @@ namespace Code.Tests.EditMode.Presenter
       _presenter.HandleEndDrag();
 
       _dragDropService.Received(1).CancelDrag();
+      _dragIconViewModel.Received(1).Hide();
     }
 
     [Test]
-    public void HandleEndDrag_SlotSource_AlwaysCancels()
+    public void HandleEndDrag_SlotSource_CancelsDrag()
     {
       _dragDropService.IsDragging.Returns(true);
       _dragDropService.Source.Returns(DragSource.BottomSlot);
+      _dragDropService.SourceSlotIndex.Returns(1);
 
       _presenter.HandleEndDrag();
 
       _dragDropService.Received(1).CancelDrag();
     }
 
-    #endregion
-
-    #region HandleDropOnCell
+    // ── HandleDropOnCell ───────────────────────────────────────────────────
 
     [Test]
     public void HandleDropOnCell_NotDragging_DoesNothing()
@@ -304,6 +307,14 @@ namespace Code.Tests.EditMode.Presenter
       _dragDropService.IsDragging.Returns(false);
       _presenter.HandleDropOnCell(Vector2Int.zero);
       _bagPresenter.DidNotReceive().Merge(Arg.Any<InventoryItem>(), Arg.Any<InventoryItem>());
+    }
+
+    [Test]
+    public void HandleDropOnCell_AlwaysHidesDragIcon()
+    {
+      _dragDropService.IsDragging.Returns(false);
+      _presenter.HandleDropOnCell(Vector2Int.zero);
+      _dragIconViewModel.Received(1).Hide();
     }
 
     [Test]
@@ -356,9 +367,7 @@ namespace Code.Tests.EditMode.Presenter
       _dragDropService.Received(1).CancelDrag();
     }
 
-    #endregion
-
-    #region HandleDropOnSlot
+    // ── HandleDropOnSlot ───────────────────────────────────────────────────
 
     [Test]
     public void HandleDropOnSlot_EmptySlot_PlacesAndEndsDrag()
@@ -375,19 +384,22 @@ namespace Code.Tests.EditMode.Presenter
     }
 
     [Test]
-    public void HandleDropOnSlot_OccupiedSlot_SwapSucceeds_EndsDrag()
+    public void HandleDropOnSlot_OccupiedSlot_SwapFromSlot_Succeeds()
     {
-      var dragged = MakeItem(); var existing = MakeItem();
-      SetupDragging(dragged, DragSource.Bag, Vector2Int.zero);
+      // Dragging from slot 2 to slot 0 — displaced item goes back to slot 2
+      var dragged  = MakeItem();
+      var existing = MakeItem();
+      SetupDragging(dragged, DragSource.BottomSlot, Vector2Int.zero, sourceSlot: 2);
+
       _slotsPresenter.GetSlot(0).Returns(existing);
       _slotsPresenter.TryRemove(0, out Arg.Any<InventoryItem>())
         .Returns(ci => { ci[1] = existing; return true; });
-      _slotsPresenter.TryPlaceInFirstFreeSlot(existing, out Arg.Any<int>()).Returns(true);
+      _slotsPresenter.TryPlace(existing, 2).Returns(true);  // swap back
       _slotsPresenter.TryPlace(dragged, 0).Returns(true);
 
       _presenter.HandleDropOnSlot(0);
 
-      _slotsPresenter.Received(1).TryPlaceInFirstFreeSlot(existing, out Arg.Any<int>());
+      _slotsPresenter.Received(1).TryPlace(existing, 2);
       _slotsPresenter.Received(1).TryPlace(dragged, 0);
       _dragDropService.Received(1).EndDrag();
     }
@@ -407,10 +419,7 @@ namespace Code.Tests.EditMode.Presenter
       _dragDropService.Received(1).CancelDrag();
     }
 
-    #endregion
-
-
-    #region HandlePointerEnterCell
+    // ── HandlePointerEnterCell ─────────────────────────────────────────────
 
     [Test]
     public void HandlePointerEnterCell_NotDragging_DoesNotRequestHighlight()
@@ -472,15 +481,23 @@ namespace Code.Tests.EditMode.Presenter
         Arg.Any<ItemConfig>(), Arg.Any<Vector2Int>(), HighlightState.Invalid);
     }
 
-    #endregion
-
-    #region HandlePointerExitCel
+    // ── HandlePointerExitCell ──────────────────────────────────────────────
 
     [Test]
-    public void HandlePointerExitCell_ClearsHighlight()
+    public void HandlePointerExitCell_WhenHighlightWasSet_ClearsHighlight()
     {
+      // First enter to set highlight, then exit
       var dragged = MakeItem(new Vector2Int(0, 0));
       SetupDragging(dragged, DragSource.Bag, Vector2Int.zero);
+      _bagPresenter
+        .CanMerge(Arg.Any<InventoryItem>(), Arg.Any<Vector2Int>(), out Arg.Any<InventoryItem>())
+        .Returns(false);
+      _bagPresenter
+        .CanPlace(Arg.Any<ItemConfig>(), Arg.Any<Vector2Int>(), Arg.Any<InventoryItem>())
+        .Returns(true);
+
+      _presenter.HandlePointerEnterCell(new Vector2Int(1, 1));
+      _bagPresenter.ClearReceivedCalls();
 
       _presenter.HandlePointerExitCell(new Vector2Int(1, 1));
 
@@ -488,16 +505,19 @@ namespace Code.Tests.EditMode.Presenter
         Arg.Any<ItemConfig>(), Arg.Any<Vector2Int>(), HighlightState.None);
     }
 
-    #endregion
+    // ── Helpers ────────────────────────────────────────────────────────────
 
-    #region Helpers
-
-    private void SetupDragging(InventoryItem item, DragSource source, Vector2Int dragOffset)
+    private void SetupDragging(
+      InventoryItem item,
+      DragSource    source,
+      Vector2Int    dragOffset,
+      int           sourceSlot = -1)
     {
       _dragDropService.IsDragging.Returns(true);
       _dragDropService.DraggedItem.Returns(item);
       _dragDropService.Source.Returns(source);
       _dragDropService.DragOffset.Returns(dragOffset);
+      _dragDropService.SourceSlotIndex.Returns(sourceSlot);
     }
 
     private static ItemConfig MakeCfg()
@@ -513,7 +533,6 @@ namespace Code.Tests.EditMode.Presenter
     private static InventoryItem MakeItem(Vector2Int origin = default) =>
       new InventoryItem(MakeCfg(), origin);
   }
-    #endregion
 
   #endregion
 }
