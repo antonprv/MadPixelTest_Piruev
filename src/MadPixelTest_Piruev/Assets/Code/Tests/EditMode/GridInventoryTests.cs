@@ -1,14 +1,20 @@
-using System.Collections.Generic;
-using NUnit.Framework;
-using UnityEngine;
-using BagFight.Core;
-using BagFight.Data;
+// Created by Anton Piruev in 2026. 
+// Any direct commercial use of derivative work is strictly prohibited.
 
-namespace BagFight.Tests.EditMode
+using System.Collections.Generic;
+using System.Linq;
+
+using Code.Core;
+
+using NUnit.Framework;
+
+using UnityEngine;
+
+namespace Code.Tests.EditMode
 {
   /// <summary>
-  /// EditMode-тесты чистой логики GridInventory.
-  /// Запуск: Window → General → Test Runner → EditMode.
+  /// EditMode tests for pure GridInventory logic.
+  /// Run: Window → General → Test Runner → EditMode.
   /// </summary>
   [TestFixture]
   public class GridInventoryTests
@@ -22,13 +28,13 @@ namespace BagFight.Tests.EditMode
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Placement — базовые случаи
+    // Placement — basic cases
     // ─────────────────────────────────────────────────────────────────────────
 
     [Test]
     public void CanPlace_SingleCell_InBounds_ReturnsTrue()
     {
-      var cfg  = InventoryTestHelpers.Single();
+      var cfg = InventoryTestHelpers.Single();
       Assert.IsTrue(_grid.CanPlace(cfg, new Vector2Int(2, 3)));
     }
 
@@ -42,7 +48,7 @@ namespace BagFight.Tests.EditMode
     [Test]
     public void TryPlace_Single_Succeeds_AndOccupiesCell()
     {
-      var cfg  = InventoryTestHelpers.Single();
+      var cfg = InventoryTestHelpers.Single();
       var item = new InventoryItem(cfg, new Vector2Int(1, 1));
 
       Assert.IsTrue(_grid.TryPlace(item));
@@ -52,7 +58,7 @@ namespace BagFight.Tests.EditMode
     [Test]
     public void TryPlace_LShape_OccupiesAllThreeCells()
     {
-      var cfg  = InventoryTestHelpers.LShape();
+      var cfg = InventoryTestHelpers.LShape();
       var item = new InventoryItem(cfg, Vector2Int.zero);
 
       Assert.IsTrue(_grid.TryPlace(item));
@@ -65,7 +71,7 @@ namespace BagFight.Tests.EditMode
     [Test]
     public void TryPlace_SamePositionTwice_SecondFails()
     {
-      var cfg   = InventoryTestHelpers.Single();
+      var cfg = InventoryTestHelpers.Single();
       var item1 = new InventoryItem(cfg, new Vector2Int(0, 0));
       var item2 = new InventoryItem(cfg, new Vector2Int(0, 0));
 
@@ -76,8 +82,8 @@ namespace BagFight.Tests.EditMode
     [Test]
     public void TryPlace_PartiallyOutOfBounds_Fails()
     {
-      // Horizontal2 на позиции (4,0) → клетка (5,0) выходит за x=4 (макс)
-      var cfg  = InventoryTestHelpers.Horizontal2();
+      // Horizontal2 at position (4,0) → cell (5,0) is outside x=4 (max)
+      var cfg = InventoryTestHelpers.Horizontal2();
       var item = new InventoryItem(cfg, new Vector2Int(4, 0));
 
       Assert.IsFalse(_grid.TryPlace(item));
@@ -90,7 +96,7 @@ namespace BagFight.Tests.EditMode
     [Test]
     public void TryRemove_PlacedItem_Succeeds_CellsBecomeEmpty()
     {
-      var cfg  = InventoryTestHelpers.LShape();
+      var cfg = InventoryTestHelpers.LShape();
       var item = InventoryTestHelpers.PlaceItem(_grid, cfg, Vector2Int.zero);
 
       Assert.IsTrue(_grid.TryRemove(item));
@@ -102,8 +108,8 @@ namespace BagFight.Tests.EditMode
     [Test]
     public void TryRemove_NotPlacedItem_ReturnsFalse()
     {
-      var cfg  = InventoryTestHelpers.Single();
-      var item = new InventoryItem(cfg, Vector2Int.zero); // не размещали
+      var cfg = InventoryTestHelpers.Single();
+      var item = new InventoryItem(cfg, Vector2Int.zero); // not placed
 
       Assert.IsFalse(_grid.TryRemove(item));
     }
@@ -111,7 +117,7 @@ namespace BagFight.Tests.EditMode
     [Test]
     public void AfterRemove_CellIsAvailableForNewItem()
     {
-      var cfg   = InventoryTestHelpers.Single();
+      var cfg = InventoryTestHelpers.Single();
       var item1 = InventoryTestHelpers.PlaceItem(_grid, cfg, new Vector2Int(2, 2));
       _grid.TryRemove(item1);
 
@@ -132,7 +138,7 @@ namespace BagFight.Tests.EditMode
     [Test]
     public void Items_ReflectsPlacedAndRemovedItems()
     {
-      var cfg   = InventoryTestHelpers.Single();
+      var cfg = InventoryTestHelpers.Single();
       var item1 = InventoryTestHelpers.PlaceItem(_grid, cfg, new Vector2Int(0, 0));
       var item2 = InventoryTestHelpers.PlaceItem(_grid, cfg, new Vector2Int(1, 0));
 
@@ -151,12 +157,12 @@ namespace BagFight.Tests.EditMode
     public void CanMerge_SameConfigWithMergeResult_ReturnsTrue()
     {
       var resultCfg = InventoryTestHelpers.Single(level: 2);
-      var cfg       = InventoryTestHelpers.Single(level: 1, mergeResult: resultCfg);
+      var cfg = InventoryTestHelpers.Single(level: 1, mergeResult: resultCfg);
 
       var item1 = InventoryTestHelpers.PlaceItem(_grid, cfg, new Vector2Int(0, 0));
       var item2 = InventoryTestHelpers.PlaceItem(_grid, cfg, new Vector2Int(1, 0));
 
-      // Тащим item2 на клетку (0,0) где лежит item1
+      // Drag item2 onto cell (0,0) where item1 is located
       Assert.IsTrue(_grid.CanMerge(item2, new Vector2Int(0, 0), out var found));
       Assert.AreSame(item1, found);
     }
@@ -164,11 +170,11 @@ namespace BagFight.Tests.EditMode
     [Test]
     public void CanMerge_DifferentConfigs_ReturnsFalse()
     {
-      var cfgA  = InventoryTestHelpers.Single(level: 1, mergeResult: InventoryTestHelpers.Single(2));
-      var cfgB  = InventoryTestHelpers.Vertical2(level: 1);
+      var cfgA = InventoryTestHelpers.Single(level: 1, mergeResult: InventoryTestHelpers.Single(2));
+      var cfgB = InventoryTestHelpers.Vertical2(level: 1);
 
       var itemA = InventoryTestHelpers.PlaceItem(_grid, cfgA, new Vector2Int(0, 0));
-      var itemB = new InventoryItem(cfgB, new Vector2Int(1, 0)); // не размещаем (тащим)
+      var itemB = new InventoryItem(cfgB, new Vector2Int(1, 0)); // not placed (dragging)
 
       Assert.IsFalse(_grid.CanMerge(itemB, new Vector2Int(0, 0), out _));
     }
@@ -176,8 +182,8 @@ namespace BagFight.Tests.EditMode
     [Test]
     public void CanMerge_NullMergeResult_ReturnsFalse()
     {
-      // MergeResult не задан → CanMerge должен вернуть false
-      var cfg   = InventoryTestHelpers.Single(level: 1, mergeResult: null);
+      // MergeResult not set → CanMerge should return false
+      var cfg = InventoryTestHelpers.Single(level: 1, mergeResult: null);
       var item1 = InventoryTestHelpers.PlaceItem(_grid, cfg, new Vector2Int(0, 0));
       var item2 = new InventoryItem(cfg, new Vector2Int(1, 0));
 
@@ -188,7 +194,7 @@ namespace BagFight.Tests.EditMode
     public void Merge_ProducesCorrectResultItem()
     {
       var resultCfg = InventoryTestHelpers.Single(level: 2);
-      var cfg       = InventoryTestHelpers.Single(level: 1, mergeResult: resultCfg);
+      var cfg = InventoryTestHelpers.Single(level: 1, mergeResult: resultCfg);
 
       var item1 = InventoryTestHelpers.PlaceItem(_grid, cfg, new Vector2Int(0, 0));
       var item2 = InventoryTestHelpers.PlaceItem(_grid, cfg, new Vector2Int(1, 0));
@@ -196,14 +202,14 @@ namespace BagFight.Tests.EditMode
       var merged = _grid.Merge(item2, item1);
 
       Assert.AreSame(resultCfg, merged.Config);
-      Assert.AreEqual(new Vector2Int(0, 0), merged.Origin); // встаёт на место цели
+      Assert.AreEqual(new Vector2Int(0, 0), merged.Origin); // takes target's place
     }
 
     [Test]
     public void Merge_OriginalItemsRemovedFromGrid()
     {
       var resultCfg = InventoryTestHelpers.Single(level: 2);
-      var cfg       = InventoryTestHelpers.Single(level: 1, mergeResult: resultCfg);
+      var cfg = InventoryTestHelpers.Single(level: 1, mergeResult: resultCfg);
 
       var item1 = InventoryTestHelpers.PlaceItem(_grid, cfg, new Vector2Int(0, 0));
       var item2 = InventoryTestHelpers.PlaceItem(_grid, cfg, new Vector2Int(1, 0));
@@ -218,7 +224,7 @@ namespace BagFight.Tests.EditMode
     public void Merge_ResultIsInItemsList()
     {
       var resultCfg = InventoryTestHelpers.Single(level: 2);
-      var cfg       = InventoryTestHelpers.Single(level: 1, mergeResult: resultCfg);
+      var cfg = InventoryTestHelpers.Single(level: 1, mergeResult: resultCfg);
 
       var item1 = InventoryTestHelpers.PlaceItem(_grid, cfg, new Vector2Int(0, 0));
       var item2 = InventoryTestHelpers.PlaceItem(_grid, cfg, new Vector2Int(1, 0));
@@ -230,20 +236,20 @@ namespace BagFight.Tests.EditMode
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // UpdateActiveCells (форма сумки меняется в рантайме)
+    // UpdateActiveCells (bag shape changes at runtime)
     // ─────────────────────────────────────────────────────────────────────────
 
     [Test]
     public void UpdateActiveCells_ItemInRemovedCell_IsEvicted()
     {
-      var cfg  = InventoryTestHelpers.Single();
+      var cfg = InventoryTestHelpers.Single();
       var item = InventoryTestHelpers.PlaceItem(_grid, cfg, new Vector2Int(4, 6));
 
-      // Уменьшаем сетку до 4×6 — клетка (4,6) пропадает
+      // Reduce grid to 4×6 — cell (4,6) is removed
       var newCells = new HashSet<Vector2Int>();
       for (int x = 0; x < 4; x++)
-      for (int y = 0; y < 6; y++)
-        newCells.Add(new Vector2Int(x, y));
+        for (int y = 0; y < 6; y++)
+          newCells.Add(new Vector2Int(x, y));
 
       var evicted = _grid.UpdateActiveCells(newCells);
 
@@ -255,14 +261,14 @@ namespace BagFight.Tests.EditMode
     [Test]
     public void UpdateActiveCells_ItemFullyInNewGrid_NotEvicted()
     {
-      var cfg  = InventoryTestHelpers.Single();
+      var cfg = InventoryTestHelpers.Single();
       var item = InventoryTestHelpers.PlaceItem(_grid, cfg, new Vector2Int(0, 0));
 
-      // Расширяем до 6×8 — (0,0) остаётся активной
+      // Expand to 6×8 — (0,0) remains active
       var newCells = new HashSet<Vector2Int>();
       for (int x = 0; x < 6; x++)
-      for (int y = 0; y < 8; y++)
-        newCells.Add(new Vector2Int(x, y));
+        for (int y = 0; y < 8; y++)
+          newCells.Add(new Vector2Int(x, y));
 
       var evicted = _grid.UpdateActiveCells(newCells);
 
@@ -273,15 +279,15 @@ namespace BagFight.Tests.EditMode
     [Test]
     public void UpdateActiveCells_LShapePartiallyOutside_WholeItemEvicted()
     {
-      // L-форма: (0,0), (0,1), (1,1) — размещаем в углу
-      var cfg  = InventoryTestHelpers.LShape();
+      // L-shape: (0,0), (0,1), (1,1) — placed in corner
+      var cfg = InventoryTestHelpers.LShape();
       var item = InventoryTestHelpers.PlaceItem(_grid, cfg, Vector2Int.zero);
 
-      // Новая сетка без столбца x=1 — клетки (1,1) нет → предмет должен выселиться целиком
+      // New grid without column x=1 — cell (1,1) is missing → item should be fully evicted
       var newCells = new HashSet<Vector2Int>();
       for (int x = 0; x < 1; x++)
-      for (int y = 0; y < 7; y++)
-        newCells.Add(new Vector2Int(x, y));
+        for (int y = 0; y < 7; y++)
+          newCells.Add(new Vector2Int(x, y));
 
       var evicted = _grid.UpdateActiveCells(newCells);
 
@@ -323,20 +329,20 @@ namespace BagFight.Tests.EditMode
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Краевые случаи
+    // Edge cases
     // ─────────────────────────────────────────────────────────────────────────
 
     [Test]
     public void CanPlace_WithIgnoredItem_IgnoredCellsAreFree()
     {
-      // Ситуация: тащим предмет, он уже убран с грида (ignored).
-      // Пробуем положить его на соседнюю позицию — не должно быть конфликта.
-      var cfg  = InventoryTestHelpers.Horizontal2();
+      // Situation: dragging an item, it's already removed from grid (ignored).
+      // Trying to place it on adjacent position — should not conflict.
+      var cfg = InventoryTestHelpers.Horizontal2();
       var item = new InventoryItem(cfg, new Vector2Int(0, 0));
       _grid.TryPlace(item);
-      _grid.TryRemove(item); // убираем (имитируем начало драга)
+      _grid.TryRemove(item); // remove (simulate drag start)
 
-      // Теперь пробуем разместить с ignored=item — клетки item считаются свободными
+      // Now try to place with ignored=item — item's cells are considered free
       Assert.IsTrue(_grid.CanPlace(cfg, new Vector2Int(1, 0), item));
     }
 
@@ -357,7 +363,7 @@ namespace BagFight.Tests.EditMode
     [Test]
     public void Square2x2_PlacedAtCorner_OccupiesFourCells()
     {
-      var cfg  = InventoryTestHelpers.Square2x2();
+      var cfg = InventoryTestHelpers.Square2x2();
       var item = InventoryTestHelpers.PlaceItem(_grid, cfg, new Vector2Int(0, 0));
 
       Assert.AreSame(item, _grid.GetItemAt(new Vector2Int(0, 0)));

@@ -2,7 +2,9 @@
     "name": "Code.Editor",
     "rootNamespace": "",
     "references": [
-        "GUID:bbfae80bcd28b8e43a587555e943e196"
+        "GUID:bbfae80bcd28b8e43a587555e943e196",
+        "GUID:b63ae62df31a959498491903d5df908f",
+        "GUID:3948d5fe8af3d334f9b79fbb4c3e64e8"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

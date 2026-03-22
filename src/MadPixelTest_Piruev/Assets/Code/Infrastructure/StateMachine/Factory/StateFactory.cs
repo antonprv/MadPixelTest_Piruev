@@ -1,12 +1,16 @@
-using Reflex.Core;
-using BagFight.Infrastructure.StateMachine.States.Interfaces;
+// Created by Anton Piruev in 2026. 
+// Any direct commercial use of derivative work is strictly prohibited.
 
-namespace BagFight.Infrastructure.StateMachine.Factory
+using Code.Infrastructure.StateMachine.States.Interfaces;
+
+using Reflex.Core;
+
+namespace Code.Infrastructure.StateMachine.Factory
 {
   /// <summary>
-  /// Создаёт стейты через Reflex Container — все зависимости
-  /// инжектируются автоматически из конструктора.
-  /// Точная копия паттерна из оригинального проекта.
+  /// Creates states via Reflex Container — all dependencies
+  /// are injected automatically from constructor.
+  /// Exact copy of pattern from original project.
   /// </summary>
   public class StateFactory
   {

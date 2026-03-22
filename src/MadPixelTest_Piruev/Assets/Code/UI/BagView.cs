@@ -1,30 +1,35 @@
-using System;
+// Created by Anton Piruev in 2026. 
+// Any direct commercial use of derivative work is strictly prohibited.
+
 using System.Collections.Generic;
+
+using Code.Data.StaticData;
+using Code.Services.Interfaces;
+using Code.UI.Types;
+
 using R3;
+
 using UnityEngine;
-using BagFight.Core;
-using BagFight.Data;
-using BagFight.Services.Interfaces;
-using BagFight.UI.Types;
+
 using Zenjex.Extensions.Attribute;
 using Zenjex.Extensions.Injector;
 
-namespace BagFight.UI
+namespace Code.UI
 {
   /// <summary>
-  /// Спавнит сетку CellView по BagConfig и реагирует на события инвентаря.
+  /// Spawns CellView grid by BagConfig and responds to inventory events.
   ///
   /// Highlights:
-  ///   При OnPointerEnter в любой CellView → тот вызывает HighlightItem()
-  ///   BagView подсвечивает все ячейки формы предмета в нужный цвет.
+  ///   On OnPointerEnter in any CellView → it calls HighlightItem()
+  ///   BagView highlights all item shape cells in the needed color.
   /// </summary>
   public class BagView : ZenjexBehaviour
   {
     [SerializeField] private RectTransform _gridRoot;
-    [SerializeField] private CellView      _cellPrefab;
+    [SerializeField] private CellView _cellPrefab;
 
     [Zenjex] private IGridInventoryService _inventoryService;
-    [Zenjex] private BagConfig             _bagConfig;
+    [Zenjex] private BagConfig _bagConfig;
 
     private readonly Dictionary<Vector2Int, CellView> _cellViews = new();
     private CompositeDisposable _disposables;
@@ -44,8 +49,8 @@ namespace BagFight.UI
     // ─── Rebuild (runtime config hot-swap) ───────────────────────────────────
 
     /// <summary>
-    /// Пересоздаёт сетку по новому конфигу.
-    /// Вызывать после GridInventory.UpdateActiveCells() если форма сумки изменилась в рантайме.
+    /// Rebuilds the grid from the new config.
+    /// Call after GridInventory.UpdateActiveCells() if bag shape changed at runtime.
     /// </summary>
     public void Rebuild()
     {
@@ -62,11 +67,11 @@ namespace BagFight.UI
     private void SpawnGrid()
     {
       var activeCells = _bagConfig.GetActiveCellsSet();
-      float cellSize  = _bagConfig.CellSize;
-      float spacing   = _bagConfig.CellSpacing;
-      float step      = cellSize + spacing;
+      float cellSize = _bagConfig.CellSize;
+      float spacing = _bagConfig.CellSpacing;
+      float step = cellSize + spacing;
 
-      // Размер корневого RectTransform подгоняем под сетку
+      // Adjust root RectTransform size to fit the grid
       var gridSize = _bagConfig.GridSize;
       _gridRoot.sizeDelta = new Vector2(
         gridSize.x * step - spacing,
@@ -74,26 +79,26 @@ namespace BagFight.UI
       );
 
       for (int x = 0; x < gridSize.x; x++)
-      for (int y = 0; y < gridSize.y; y++)
-      {
-        var coord = new Vector2Int(x, y);
-        var cell  = Instantiate(_cellPrefab, _gridRoot);
+        for (int y = 0; y < gridSize.y; y++)
+        {
+          var coord = new Vector2Int(x, y);
+          var cell = Instantiate(_cellPrefab, _gridRoot);
 
-        // Ручное позиционирование (top-left origin)
-        var rt = cell.GetComponent<RectTransform>();
-        rt.anchorMin = rt.anchorMax = new Vector2(0f, 1f);
-        rt.pivot     = new Vector2(0f, 1f);
-        rt.sizeDelta = Vector2.one * cellSize;
-        rt.anchoredPosition = new Vector2(
-           x * step,
-          -y * step
-        );
+          // Manual positioning (top-left origin)
+          var rt = cell.GetComponent<RectTransform>();
+          rt.anchorMin = rt.anchorMax = new Vector2(0f, 1f);
+          rt.pivot = new Vector2(0f, 1f);
+          rt.sizeDelta = Vector2.one * cellSize;
+          rt.anchoredPosition = new Vector2(
+             x * step,
+            -y * step
+          );
 
-        bool isActive = activeCells.Contains(coord);
-        cell.Initialize(coord, isActive, HighlightItem);
+          bool isActive = activeCells.Contains(coord);
+          cell.Initialize(coord, isActive, HighlightItem);
 
-        _cellViews[coord] = cell;
-      }
+          _cellViews[coord] = cell;
+        }
     }
 
     // ─── Subscriptions ────────────────────────────────────────────────────────
@@ -131,7 +136,7 @@ namespace BagFight.UI
     {
       if (!_cellViews.TryGetValue(origin, out var cell)) return;
 
-      // Вспышка + масштаб
+      // Flash + scale
       LeanTween
         .scale(cell.gameObject, Vector3.one * 1.25f, 0.1f)
         .setEaseOutQuad()
@@ -139,11 +144,11 @@ namespace BagFight.UI
           LeanTween.scale(cell.gameObject, Vector3.one, 0.15f).setEaseInBack());
     }
 
-    // ─── Highlight API (вызывается из CellView) ───────────────────────────────
+    // ─── Highlight API (called from CellView) ───────────────────────────────
 
     /// <summary>
-    /// Подсвечивает все ячейки формы предмета при размещении по origin.
-    /// origin уже вычислен в CellView с учётом DragOffset.
+    /// Highlights all item shape cells on placement by origin.
+    /// origin is already calculated in CellView considering DragOffset.
     /// </summary>
     public void HighlightItem(ItemConfig config, Vector2Int origin, HighlightState state)
     {

@@ -1,43 +1,48 @@
-using System.Threading;
-using Cysharp.Threading.Tasks;
-using R3;
-using UnityEngine;
-using BagFight.Core;
-using BagFight.Services.Interfaces;
-using BagFight.Infrastructure.StateMachine.States.Interfaces;
+// Created by Anton Piruev in 2026. 
+// Any direct commercial use of derivative work is strictly prohibited.
 
-namespace BagFight.Infrastructure.StateMachine
+using Code.Core;
+using Code.Infrastructure.StateMachine.States.Interfaces;
+using Code.Services.Interfaces;
+
+using Cysharp.Threading.Tasks;
+
+using R3;
+
+using UnityEngine;
+
+namespace Code.Infrastructure.StateMachine
 {
   /// <summary>
-  /// Стейт 3 из 3 — активный геймплей.
+  /// State 3 of 3 — active gameplay.
   ///
-  /// Ответственность:
-  ///   1. R3-подписки на события инвентаря (лог, расширяемые хуки)
-  ///   2. Ожидание выхода из игры (можно расширить: пауза, рестарт)
+  /// Responsibilities:
+  ///   1. R3 subscriptions to inventory events (log, extensible hooks)
+  ///   2. Wait for game exit (can be extended: pause, restart)
   ///
-  /// Все подписки живут в _disposables и автоматически снимаются в Exit().
-  /// Это гарантирует отсутствие утечек при переходе между стейтами.
+  /// All subscriptions live in _disposables and are automatically disposed in Exit().
+  /// This guarantees no leaks on state transitions.
   ///
-  /// Почему R3, а не events:
-  ///   - Compose: можно добавить Throttle / Debounce / Where без изменения сервисов
-  ///   - Dispose через CompositeDisposable — одна строка в Exit()
-  ///   - Легко тестировать: подменяем Subject в тестах
+  /// Why R3 instead of events:
+  ///   - Compose: can add Throttle / Debounce / Where without modifying services
+  ///   - Dispose via CompositeDisposable — one line in Exit()
+  ///   - Easy to test: substitute Subject in tests
   /// </summary>
   public class GameLoopState : IGameState
   {
     public StateType Type => StateType.GameLoop;
 
     private readonly IGridInventoryService _inventoryService;
-    private readonly IBottomSlotsService   _slotsService;
+    private readonly IBottomSlotsService _slotsService;
 
     private CompositeDisposable _disposables;
 
     public GameLoopState(
       IGridInventoryService inventoryService,
-      IBottomSlotsService   slotsService)
+      IBottomSlotsService slotsService)
     {
       _inventoryService = inventoryService;
-      _slotsService     = slotsService;
+      _slotsService = slotsService;
     }
 
     public void Enter()
@@ -71,8 +76,8 @@ namespace BagFight.Infrastructure.StateMachine
     }
 
     // ─── Event handlers ───────────────────────────────────────────────────────
-    // Оставлены как виртуальные точки расширения:
-    // в реальной игре здесь были бы триггеры квестов, аналитика, звук и т.п.
+    // Kept as virtual extension points:
+    // in a real game these would be quest triggers, analytics, sound, etc.
 
     private void OnItemPlaced(InventoryItem item) =>
       Debug.Log($"[GameLoop] Placed: {item.Config.ItemId} at {item.Origin}");

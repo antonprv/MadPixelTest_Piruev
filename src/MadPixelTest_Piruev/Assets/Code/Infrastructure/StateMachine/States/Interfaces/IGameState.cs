@@ -1,18 +1,21 @@
-namespace BagFight.Infrastructure.StateMachine.States.Interfaces
+// Created by Anton Piruev in 2026. 
+// Any direct commercial use of derivative work is strictly prohibited.
+
+namespace Code.Infrastructure.StateMachine.States.Interfaces
 {
-  /// <summary>Стейт без payload.</summary>
+  /// <summary>State without payload.</summary>
   public interface IGameState : IGameExitableState
   {
     void Enter();
   }
 
-  /// <summary>Стейт с payload (например, имя сцены).</summary>
+  /// <summary>State with payload (e.g., scene name).</summary>
   public interface IGamePayloadedState<TPayload> : IGameExitableState
   {
     void Enter(TPayload payload);
   }
 
-  /// <summary>Базовый интерфейс: тип + выход.</summary>
+  /// <summary>Base interface: type + exit.</summary>
   public interface IGameExitableState
   {
     StateType Type { get; }

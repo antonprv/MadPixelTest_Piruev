@@ -1,39 +1,44 @@
-using System.Collections.Generic;
-using UnityEngine;
-using BagFight.Data;
+// Created by Anton Piruev in 2026. 
+// Any direct commercial use of derivative work is strictly prohibited.
 
-namespace BagFight.Core
+using System.Collections.Generic;
+
+using Code.Data.StaticData;
+
+using UnityEngine;
+
+namespace Code.Core
 {
   /// <summary>
-  /// Чистая логика грида без MonoBehaviour.
-  /// Не знает о Unity UI, не знает о DI.
+  /// Pure grid logic without MonoBehaviour.
+  /// Knows nothing about Unity UI, knows nothing about DI.
   ///
-  /// Инварианты:
-  ///  - _occupiedCells[cell] → предмет, занимающий эту клетку
-  ///  - _items — список всех размещённых предметов (без дублей)
-  ///  - _activeCells — множество клеток, которые являются частью сумки
+  /// Invariants:
+  ///  - _occupiedCells[cell] → item occupying this cell
+  ///  - _items — list of all placed items (no duplicates)
+  ///  - _activeCells — set of cells that are part of the bag
   /// </summary>
   public class GridInventory
   {
-    private readonly HashSet<Vector2Int>              _activeCells;
+    private readonly HashSet<Vector2Int> _activeCells;
     private readonly Dictionary<Vector2Int, InventoryItem> _occupiedCells;
-    private readonly List<InventoryItem>              _items;
+    private readonly List<InventoryItem> _items;
 
     public IReadOnlyList<InventoryItem> Items => _items;
 
     public GridInventory(HashSet<Vector2Int> activeCells)
     {
-      _activeCells   = new HashSet<Vector2Int>(activeCells);
+      _activeCells = new HashSet<Vector2Int>(activeCells);
       _occupiedCells = new Dictionary<Vector2Int, InventoryItem>();
-      _items         = new List<InventoryItem>();
+      _items = new List<InventoryItem>();
     }
 
     // ─── Placement ────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Проверяет, можно ли разместить предмет с config по origin.
-    /// ignoredItem — предмет, который сейчас тащится и уже убран с грида
-    /// (нужен для highlight: чтобы не считать его клетки занятыми).
+    /// Checks if an item with config can be placed at origin.
+    /// ignoredItem — item currently being dragged and already removed from grid
+    /// (needed for highlight: so its cells are not considered occupied).
     /// </summary>
     public bool CanPlace(ItemConfig config, Vector2Int origin, InventoryItem ignoredItem = null)
     {
@@ -48,7 +53,7 @@ namespace BagFight.Core
       return true;
     }
 
-    /// <summary>Размещает предмет. Возвращает false если невозможно.</summary>
+    /// <summary>Places an item. Returns false if impossible.</summary>
     public bool TryPlace(InventoryItem item)
     {
       if (!CanPlace(item.Config, item.Origin))
@@ -61,7 +66,7 @@ namespace BagFight.Core
       return true;
     }
 
-    /// <summary>Убирает предмет с грида. Возвращает false если предмет не найден.</summary>
+    /// <summary>Removes an item from the grid. Returns false if item not found.</summary>
     public bool TryRemove(InventoryItem item)
     {
       if (!_items.Contains(item))
@@ -82,7 +87,7 @@ namespace BagFight.Core
       return item;
     }
 
-    public bool IsCellActive(Vector2Int cell)   => _activeCells.Contains(cell);
+    public bool IsCellActive(Vector2Int cell) => _activeCells.Contains(cell);
     public bool IsCellOccupied(Vector2Int cell) => _occupiedCells.ContainsKey(cell);
 
     public IReadOnlyCollection<Vector2Int> ActiveCells => _activeCells;
@@ -90,8 +95,8 @@ namespace BagFight.Core
     // ─── Merge ────────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Проверяет, можно ли слить dragged с предметом в targetOrigin.
-    /// Условие: оба одинакового конфига, оба поддерживают мерж.
+    /// Checks if dragged can be merged with item at targetOrigin.
+    /// Condition: both have same config, both support merge.
     /// </summary>
     public bool CanMerge(InventoryItem dragged, Vector2Int targetCell, out InventoryItem targetItem)
     {
@@ -106,18 +111,18 @@ namespace BagFight.Core
       if (dragged.Config != targetItem.Config)
         return false;
 
-      // Проверяем, влезет ли результат на место targetItem
+      // Check if result fits on targetItem's place
       var resultConfig = dragged.Config.MergeResult;
       return CanPlace(resultConfig, targetItem.Origin, targetItem);
     }
 
     /// <summary>
-    /// Выполняет мерж: убирает оба предмета, создаёт и размещает результат.
-    /// Возвращает новый предмет.
+    /// Performs merge: removes both items, creates and places result.
+    /// Returns new item.
     /// </summary>
     public InventoryItem Merge(InventoryItem a, InventoryItem b)
     {
-      var resultOrigin = b.Origin; // результат встаёт на место b (цели)
+      var resultOrigin = b.Origin; // result takes b's place (target)
       TryRemove(a);
       TryRemove(b);
 
@@ -129,8 +134,8 @@ namespace BagFight.Core
     // ─── Config hot-swap ──────────────────────────────────────────────────────
 
     /// <summary>
-    /// Обновляет форму сумки в рантайме.
-    /// Предметы, оказавшиеся вне новых активных клеток, возвращаются в список evicted.
+    /// Updates bag shape at runtime.
+    /// Items that end up outside new active cells are returned in evicted list.
     /// </summary>
     public List<InventoryItem> UpdateActiveCells(HashSet<Vector2Int> newActiveCells)
     {

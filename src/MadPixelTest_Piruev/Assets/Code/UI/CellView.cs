@@ -1,31 +1,39 @@
+// Created by Anton Piruev in 2026. 
+// Any direct commercial use of derivative work is strictly prohibited.
+
 using System;
+
+using Code.Core;
+using Code.Data.StaticData;
+using Code.Infrastructure.AssetManagement;
+using Code.Services.Interfaces;
+using Code.UI.Types;
+
 using Cysharp.Threading.Tasks;
+
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
-using BagFight.Core;
-using BagFight.Infrastructure.AssetManagement;
-using BagFight.Services.Interfaces;
-using BagFight.UI.Types;
+
 using Zenjex.Extensions.Attribute;
 using Zenjex.Extensions.Injector;
 
-namespace BagFight.UI
+namespace Code.UI
 {
   /// <summary>
-  /// Одна ячейка грида.
+  /// Single grid cell.
   ///
-  /// Визуал:
-  ///   _background  — фон ячейки (меняет цвет: пусто / занято)
-  ///   _iconImage   — иконка предмета, отображается только на origin-клетке предмета
-  ///   _highlight   — полупрозрачный оверлей: зелёный/красный/золотой при drag-over
+  /// Visual:
+  ///   _background  — cell background (changes color: empty / occupied)
+  ///   _iconImage   — item icon, displayed only on item's origin cell
+  ///   _highlight   — semi-transparent overlay: green/red/gold on drag-over
   ///
   /// Drag & Drop:
-  ///   OnBeginDrag → снимает предмет с грида, отдаёт в DragDropService, показывает DragIconView
-  ///   OnDrag      → двигает DragIconView
-  ///   OnEndDrag   → если DragDropService ещё активен (дроп в пустоту) → CancelDrag
-  ///   OnDrop      → пробует merge / place; при неудаче → CancelDrag
-  ///   OnPointerEnter/Exit → управляет подсветкой через коллбэк из BagView
+  ///   OnBeginDrag → removes item from grid, passes to DragDropService, shows DragIconView
+  ///   OnDrag      → moves DragIconView
+  ///   OnEndDrag   → if DragDropService still active (drop in void) → CancelDrag
+  ///   OnDrop      → tries merge / place; on failure → CancelDrag
+  ///   OnPointerEnter/Exit → controls highlight via callback from BagView
   /// </summary>
   public class CellView : ZenjexBehaviour,
     IBeginDragHandler, IDragHandler, IEndDragHandler,
@@ -38,26 +46,26 @@ namespace BagFight.UI
     [SerializeField] private Image _highlight;
 
     [Header("Colors")]
-    [SerializeField] private Color _emptyColor    = new(0.15f, 0.15f, 0.15f, 0.6f);
-    [SerializeField] private Color _validColor    = new(0.0f,  0.9f,  0.2f,  0.45f);
-    [SerializeField] private Color _invalidColor  = new(0.9f,  0.1f,  0.0f,  0.45f);
-    [SerializeField] private Color _mergeColor    = new(1.0f,  0.75f, 0.0f,  0.55f);
+    [SerializeField] private Color _emptyColor = new(0.15f, 0.15f, 0.15f, 0.6f);
+    [SerializeField] private Color _validColor = new(0.0f, 0.9f, 0.2f, 0.45f);
+    [SerializeField] private Color _invalidColor = new(0.9f, 0.1f, 0.0f, 0.45f);
+    [SerializeField] private Color _mergeColor = new(1.0f, 0.75f, 0.0f, 0.55f);
 
     [Header("Animation")]
     [SerializeField] private float _placeDuration = 0.12f;
 
     // ─── Injected ─────────────────────────────────────────────────────────────
-    [Zenjex] private IGridInventoryService              _inventoryService;
-    [Zenjex] private IBottomSlotsService                _slotsService;
-    [Zenjex] private IGridDragDropService               _dragDropService;
-    [Zenjex] private DragIconView                       _dragIconView;
-    [Zenjex] private IAssetLoader                       _assetLoader;
+    [Zenjex] private IGridInventoryService _inventoryService;
+    [Zenjex] private IBottomSlotsService _slotsService;
+    [Zenjex] private IGridDragDropService _dragDropService;
+    [Zenjex] private DragIconView _dragIconView;
+    [Zenjex] private IAssetLoader _assetLoader;
 
     // ─── State ────────────────────────────────────────────────────────────────
     private Vector2Int _cellCoord;
-    private bool       _isActive;
+    private bool _isActive;
 
-    // Коллбэк к BagView для подсветки нескольких клеток сразу
+    // Callback to BagView for highlighting multiple cells at once
     private Action<ItemConfig, Vector2Int, HighlightState> _onHighlightRequest;
 
     // ─── Init ─────────────────────────────────────────────────────────────────
@@ -67,8 +75,8 @@ namespace BagFight.UI
       bool isActive,
       Action<ItemConfig, Vector2Int, HighlightState> onHighlightRequest)
     {
-      _cellCoord          = coord;
-      _isActive           = isActive;
+      _cellCoord = coord;
+      _isActive = isActive;
       _onHighlightRequest = onHighlightRequest;
 
       if (!isActive)
@@ -87,7 +95,7 @@ namespace BagFight.UI
 
     private async UniTaskVoid RefreshViewAsync()
     {
-      var item     = _inventoryService.GetItemAt(_cellCoord);
+      var item = _inventoryService.GetItemAt(_cellCoord);
       bool isEmpty = item == null;
 
       _background.color = isEmpty ? _emptyColor : item.Config.ItemColor;
@@ -112,15 +120,15 @@ namespace BagFight.UI
           break;
         case HighlightState.Valid:
           _highlight.enabled = true;
-          _highlight.color   = _validColor;
+          _highlight.color = _validColor;
           break;
         case HighlightState.Invalid:
           _highlight.enabled = true;
-          _highlight.color   = _invalidColor;
+          _highlight.color = _invalidColor;
           break;
         case HighlightState.Merge:
           _highlight.enabled = true;
-          _highlight.color   = _mergeColor;
+          _highlight.color = _mergeColor;
           break;
       }
     }
@@ -136,7 +144,7 @@ namespace BagFight.UI
       _inventoryService.TryRemove(item);
       _dragDropService.StartDrag(item, DragSource.Bag, dragOffset);
 
-      // Показываем иконку сразу из кэша — к этому моменту preloader уже прогрел все спрайты
+      // Show icon immediately from cache — preloader has already warmed up all sprites by this point
       ShowDragIconAsync(item, eventData.position).Forget();
       RefreshView();
     }
@@ -147,7 +155,7 @@ namespace BagFight.UI
         ? await _assetLoader.LoadAsync<Sprite>(item.Config.Icon)
         : null;
 
-      // Проверяем что драг ещё активен (пользователь мог отпустить)
+      // Check that drag is still active (user might have released)
       if (_dragDropService.IsDragging && sprite != null)
         _dragIconView.Show(sprite, position);
     }
@@ -165,19 +173,19 @@ namespace BagFight.UI
     {
       _dragIconView.Hide();
 
-      // Если IsDragging всё ещё true — OnDrop не сработал (дроп в пустоту / вне UI)
+      // If IsDragging is still true — OnDrop didn't trigger (drop in void / outside UI)
       if (!_dragDropService.IsDragging) return;
 
       var item = _dragDropService.DraggedItem;
 
-      // Пробуем вернуть в слоты снизу
+      // Try to return to bottom slots
       if (_slotsService.TryPlaceInFirstFreeSlot(item, out _))
       {
         _dragDropService.EndDrag();
       }
       else
       {
-        // Слоты полны — возвращаем обратно в сумку
+        // Slots are full — return back to bag
         _dragDropService.CancelDrag();
       }
 
@@ -192,10 +200,10 @@ namespace BagFight.UI
 
       var dragged = _dragDropService.DraggedItem;
 
-      // origin = ячейка под курсором минус смещение захвата
+      // origin = cell under cursor minus grab offset
       var targetOrigin = _cellCoord - _dragDropService.DragOffset;
 
-      // 1. Проверяем мерж (по ячейке под курсором)
+      // 1. Check merge (by cell under cursor)
       if (_inventoryService.CanMerge(dragged, _cellCoord, out var targetItem))
       {
         var merged = _inventoryService.Merge(dragged, targetItem);
@@ -205,7 +213,7 @@ namespace BagFight.UI
         return;
       }
 
-      // 2. Пробуем разместить с вычисленным origin
+      // 2. Try to place with calculated origin
       dragged.SetOrigin(targetOrigin);
       if (_inventoryService.TryPlace(dragged))
       {
@@ -215,7 +223,7 @@ namespace BagFight.UI
         return;
       }
 
-      // 3. Не получилось → CancelDrag (вернуть на исходное место)
+      // 3. Failed → CancelDrag (return to original position)
       _dragDropService.CancelDrag();
       RefreshView();
     }
@@ -226,7 +234,7 @@ namespace BagFight.UI
     {
       if (!_dragDropService.IsDragging) return;
 
-      var dragged     = _dragDropService.DraggedItem;
+      var dragged = _dragDropService.DraggedItem;
       var targetOrigin = _cellCoord - _dragDropService.DragOffset;
 
       HighlightState state;
@@ -238,7 +246,7 @@ namespace BagFight.UI
       else
         state = HighlightState.Invalid;
 
-      // Подсвечиваем форму предмета начиная с targetOrigin
+      // Highlight item shape starting from targetOrigin
       _onHighlightRequest?.Invoke(dragged.Config, targetOrigin, state);
     }
 
@@ -253,7 +261,7 @@ namespace BagFight.UI
 
     private void PlayPlaceAnimation(Vector2Int origin)
     {
-      // Масштабный «поп» при размещении — запускаем на иконке origin-клетки
+      // Scale "pop" on place — run on origin cell's icon
       if (_cellCoord != origin) return;
 
       transform.localScale = Vector3.one * 0.8f;

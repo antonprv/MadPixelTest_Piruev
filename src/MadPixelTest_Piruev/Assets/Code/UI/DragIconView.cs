@@ -1,34 +1,37 @@
+// Created by Anton Piruev in 2026. 
+// Any direct commercial use of derivative work is strictly prohibited.
+
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace BagFight.UI
+namespace Code.UI
 {
   /// <summary>
-  /// Плавающая иконка, следующая за пальцем / мышью во время drag.
-  /// Привязан к корневому Canvas (overlay режим).
-  /// Один экземпляр на всю сцену — кладём в installer как singleton.
+  /// Floating icon following finger/mouse during drag.
+  /// Attached to root Canvas (overlay mode).
+  /// Single instance per scene — register in installer as singleton.
   /// </summary>
   public class DragIconView : MonoBehaviour
   {
-    [SerializeField] private Image        _icon;
-    [SerializeField] private CanvasGroup  _canvasGroup;
-    [SerializeField] private float        _dragAlpha = 0.85f;
+    [SerializeField] private Image _icon;
+    [SerializeField] private CanvasGroup _canvasGroup;
+    [SerializeField] private float _dragAlpha = 0.85f;
 
     private RectTransform _rectTransform;
-    private Canvas        _rootCanvas;
+    private Canvas _rootCanvas;
 
     private void Awake()
     {
       _rectTransform = GetComponent<RectTransform>();
-      _rootCanvas    = GetComponentInParent<Canvas>();
+      _rootCanvas = GetComponentInParent<Canvas>();
       Hide();
     }
 
     public void Show(Sprite sprite, Vector2 screenPosition)
     {
-      _icon.sprite        = sprite;
-      _icon.color         = Color.white;
-      _canvasGroup.alpha  = _dragAlpha;
+      _icon.sprite = sprite;
+      _icon.color = Color.white;
+      _canvasGroup.alpha = _dragAlpha;
       gameObject.SetActive(true);
       UpdatePosition(screenPosition);
     }

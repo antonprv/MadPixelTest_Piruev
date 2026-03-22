@@ -1,44 +1,49 @@
+// Created by Anton Piruev in 2026. 
+// Any direct commercial use of derivative work is strictly prohibited.
+
 using System;
 using System.Threading;
-using Cysharp.Threading.Tasks;
-using R3;
-using UnityEngine;
-using BagFight.Infrastructure.AssetsPreloader;
-using BagFight.Infrastructure.Loading;
-using BagFight.Infrastructure.StateMachine.States.Interfaces;
 
-namespace BagFight.Infrastructure.StateMachine
+using Code.Infrastructure.AssetsPreloader;
+using Code.Infrastructure.Loading;
+using Code.Infrastructure.StateMachine.States.Interfaces;
+
+using Cysharp.Threading.Tasks;
+
+using R3;
+
+namespace Code.Infrastructure.StateMachine
 {
   /// <summary>
-  /// Стейт 2 из 3.
+  /// State 2 of 3.
   ///
-  /// Ответственность:
-  ///   1. Параллельная загрузка всех Addressable-иконок через IAssetsPreloader
-  ///   2. Обновление прогресс-бара на шторке (R3 Observable → SetProgress)
-  ///   3. После завершения — скрытие шторки и переход в GameLoopState
+  /// Responsibilities:
+  ///   1. Parallel loading of all Addressable icons via IAssetsPreloader
+  ///   2. Update progress bar on curtain (R3 Observable → SetProgress)
+  ///   3. After completion — hide curtain and transition to GameLoopState
   ///
-  /// Паттерн прогресса:
-  ///   BagAssetsPreloader пушит float [0..1] в Subject<float>.
-  ///   Здесь подписываемся на Observable и пробрасываем в ILoadingScreen.SetProgress.
-  ///   Подписка AutoDispose через CancellationToken.
+  /// Progress pattern:
+  ///   BagAssetsPreloader pushes float [0..1] to Subject<float>.
+  ///   Here we subscribe to Observable and forward to ILoadingScreen.SetProgress.
+  ///   Subscription AutoDispose via CancellationToken.
   /// </summary>
   public class PreloadAssetsState : IGameState
   {
     public StateType Type => StateType.PreloadAssets;
 
-    private readonly IGameStateMachine  _gsm;
-    private readonly IAssetsPreloader   _preloader;
-    private readonly ILoadingScreen     _loadingScreen;
+    private readonly IGameStateMachine _gsm;
+    private readonly IAssetsPreloader _preloader;
+    private readonly ILoadingScreen _loadingScreen;
 
     private CancellationTokenSource _cts;
 
     public PreloadAssetsState(
-      IGameStateMachine  gsm,
-      IAssetsPreloader   preloader,
-      ILoadingScreen     loadingScreen)
+      IGameStateMachine gsm,
+      IAssetsPreloader preloader,
+      ILoadingScreen loadingScreen)
     {
-      _gsm           = gsm;
-      _preloader     = preloader;
+      _gsm = gsm;
+      _preloader = preloader;
       _loadingScreen = loadingScreen;
     }
 
@@ -49,18 +54,18 @@ namespace BagFight.Infrastructure.StateMachine
       _cts = new CancellationTokenSource();
       var ct = _cts.Token;
 
-      // Подписываемся на прогресс → обновляем полосу загрузки
+      // Subscribe to progress → update loading bar
       using var progressSub = _preloader.Progress
         .Subscribe(v => _loadingScreen.SetProgress(v));
 
-      // Запускаем параллельную загрузку иконок
-      // Progress<float> — стандартный IProgress<float>, репортит в тот же Subject
-      var progress = new Progress<float>(_ => { }); // Subject уже пушит через Observable
+      // Start parallel icon loading
+      // Progress<float> — standard IProgress<float>, reports to same Subject
+      var progress = new Progress<float>(_ => { }); // Subject already pushes via Observable
       await _preloader.PreloadItemIconsAsync(progress, ct);
 
       if (ct.IsCancellationRequested) return;
 
-      // Шторка скрывается — игра готова
+      // Curtain hides — game is ready
       await _loadingScreen.HideAsync();
 
       if (ct.IsCancellationRequested) return;

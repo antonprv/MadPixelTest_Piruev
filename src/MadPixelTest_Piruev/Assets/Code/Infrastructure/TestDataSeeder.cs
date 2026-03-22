@@ -1,12 +1,18 @@
+// Created by Anton Piruev in 2026. 
+// Any direct commercial use of derivative work is strictly prohibited.
+
 using System.Collections.Generic;
+
+using Code.Core;
+using Code.Data.StaticData;
+using Code.Services.Interfaces;
+
 using UnityEngine;
-using BagFight.Core;
-using BagFight.Data;
-using BagFight.Services.Interfaces;
+
 using Zenjex.Extensions.Attribute;
 using Zenjex.Extensions.Injector;
 
-namespace BagFight.Infrastructure
+namespace Code.Infrastructure
 {
   /// <summary>
   /// Заполняет нижние слоты тестовыми предметами при старте.

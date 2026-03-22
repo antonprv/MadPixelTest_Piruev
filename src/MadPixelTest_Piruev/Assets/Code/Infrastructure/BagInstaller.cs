@@ -1,42 +1,48 @@
+// Created by Anton Piruev in 2026. 
+// Any direct commercial use of derivative work is strictly prohibited.
+
 using System.Collections;
+
+using Code.Data.StaticData;
+using Code.Infrastructure.AssetManagement;
+using Code.Infrastructure.AssetsPreloader;
+using Code.Infrastructure.Loading;
+using Code.Infrastructure.StateMachine;
+using Code.Infrastructure.StateMachine.Factory;
+using Code.Services;
+using Code.UI;
+
 using Reflex.Core;
+
 using UnityEngine;
-using BagFight.Data;
-using BagFight.Infrastructure.AssetManagement;
-using BagFight.Infrastructure.AssetsPreloader;
-using BagFight.Infrastructure.Loading;
-using BagFight.Infrastructure.StateMachine;
-using BagFight.Infrastructure.StateMachine.Factory;
-using BagFight.Services;
-using BagFight.Services.Interfaces;
-using BagFight.UI;
+
 using Zenjex.Extensions.Core;
 
-namespace BagFight.Infrastructure
+namespace Code.Infrastructure
 {
   /// <summary>
-  /// Корневой DI-инсталлер проекта.
+  /// Root DI installer of the project.
   ///
-  /// Порядок регистраций:
-  ///   1. Данные (ScriptableObjects)
+  /// Registration order:
+  ///   1. Data (ScriptableObjects)
   ///   2. Asset infrastructure (AssetLoader, AssetsPreloader)
   ///   3. Loading UI (LoadingCurtain)
-  ///   4. GSM — GameStateMachine + StateFactory + все стейты
-  ///   5. Gameplay-сервисы (GridInventory, BottomSlots, DragDrop)
-  ///   6. Scene-синглтоны (DragIconView)
+  ///   4. GSM — GameStateMachine + StateFactory + all states
+  ///   5. Gameplay services (GridInventory, BottomSlots, DragDrop)
+  ///   6. Scene singletons (DragIconView)
   ///
-  /// GameStateMachine реализует IInitializable →
-  ///   Zenjex вызовет Initialize() после сборки контейнера →
-  ///   GSM войдёт в BootstrapState автоматически.
+  /// GameStateMachine implements IInitializable —
+  ///   Zenjex calls Initialize() after container assembly —
+  ///   GSM enters BootstrapState automatically.
   /// </summary>
   public class BagInstaller : ProjectRootInstaller
   {
     [Header("Configs")]
-    [SerializeField] private BagConfig    _bagConfig;
+    [SerializeField] private BagConfig _bagConfig;
     [SerializeField] private ItemManifest _itemManifest;
 
     [Header("Scene references")]
-    [SerializeField] private DragIconView   _dragIconView;
+    [SerializeField] private DragIconView _dragIconView;
     [SerializeField] private LoadingCurtain _loadingCurtain;
 
     public override void InstallBindings(ContainerBuilder builder)
@@ -51,7 +57,7 @@ namespace BagFight.Infrastructure
 
     public override IEnumerator InstallGameInstanceRoutine() => null;
 
-    // LaunchGame пустой — старт через IInitializable на GameStateMachine
+    // LaunchGame is empty — start via IInitializable on GameStateMachine
     public override void LaunchGame() { }
 
     // ─── Registration groups ──────────────────────────────────────────────────
@@ -82,16 +88,16 @@ namespace BagFight.Infrastructure
 
     private void RegisterGSM(ContainerBuilder builder)
     {
-      // StateFactory резолвит стейты из контейнера
+      // StateFactory resolves states from container
       builder.Bind<StateFactory>()
         .AsSingle();
 
-      // GameStateMachine — IInitializable → Zenjex запустит Initialize() автоматически
+      // GameStateMachine — IInitializable → Zenjex calls Initialize() automatically
       builder.Bind<GameStateMachine>()
         .BindInterfacesAndSelf()   // → IGameStateMachine + IInitializable
         .AsSingle();
 
-      // Стейты — AsTransient: свежий экземпляр при каждом переходе
+      // States — AsTransient: fresh instance on each transition
       builder.Bind<BootstrapState>().AsTransient();
       builder.Bind<PreloadAssetsState>().AsTransient();
       builder.Bind<GameLoopState>().AsTransient();

@@ -1,19 +1,24 @@
+// Created by Anton Piruev in 2026. 
+// Any direct commercial use of derivative work is strictly prohibited.
+
 using System.Collections.Generic;
+
 using Cysharp.Threading.Tasks;
+
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 
-namespace BagFight.Infrastructure.AssetManagement
+namespace Code.Infrastructure.AssetManagement
 {
   /// <summary>
-  /// Обёртка над Addressables с кэшем хэндлов.
+  /// Wrapper over Addressables with handle cache.
   ///
-  /// Паттерн кэша: при первом LoadAsync запускает операцию и регистрирует
-  /// её в _completedHandles по ключу. Повторный вызов с тем же ключом
-  /// возвращает Result напрямую — без обращения к Addressables.
+  /// Cache pattern: on first LoadAsync starts operation and registers
+  /// it in _completedHandles by key. Subsequent calls with same key
+  /// return Result directly — without Addressables access.
   ///
-  /// Cleanup() освобождает все хэндлы (вызывать при смене сцены / завершении игры).
+  /// Cleanup() releases all handles (call on scene change / game end).
   /// </summary>
   public class AssetLoader : IAssetLoader
   {
@@ -76,10 +81,10 @@ namespace BagFight.Infrastructure.AssetManagement
 
     private async UniTask<T> RunWithCache<T>(string key, AsyncOperationHandle<T> op) where T : Object
     {
-      // Регистрируем completed-хэндл для последующих cache-hit запросов
+      // Register completed handle for subsequent cache-hit requests
       op.Completed += completed => _completedHandles[key] = completed;
 
-      // Трекаем для Cleanup
+      // Track for Cleanup
       if (!_calledHandles.TryGetValue(key, out var list))
       {
         list = new List<AsyncOperationHandle>();

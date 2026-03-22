@@ -1,16 +1,23 @@
+// Created by Anton Piruev in 2026. 
+// Any direct commercial use of derivative work is strictly prohibited.
+
 using System.Collections.Generic;
+
+using Code.Data.StaticData;
+using Code.Services.Interfaces;
+
 using R3;
+
 using UnityEngine;
-using BagFight.Data;
-using BagFight.Services.Interfaces;
+
 using Zenjex.Extensions.Attribute;
 using Zenjex.Extensions.Injector;
 
-namespace BagFight.UI
+namespace Code.UI
 {
   /// <summary>
-  /// Спавнит N BottomSlotView и синхронизирует их с IBottomSlotsService.
-  /// Горизонтальный ряд снизу экрана.
+  /// Spawns N BottomSlotView and syncs them with IBottomSlotsService.
+  /// Horizontal row at the bottom of the screen.
   /// </summary>
   public class BottomSlotsView : ZenjexBehaviour
   {
@@ -18,7 +25,7 @@ namespace BagFight.UI
     [SerializeField] private BottomSlotView _slotPrefab;
 
     [Zenjex] private IBottomSlotsService _slotsService;
-    [Zenjex] private BagConfig           _bagConfig;
+    [Zenjex] private BagConfig _bagConfig;
 
     private readonly List<BottomSlotView> _slots = new();
     private CompositeDisposable _disposables;

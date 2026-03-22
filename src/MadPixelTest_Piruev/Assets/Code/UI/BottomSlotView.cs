@@ -1,27 +1,33 @@
+// Created by Anton Piruev in 2026. 
+// Any direct commercial use of derivative work is strictly prohibited.
+
+using Code.Core;
+using Code.Infrastructure.AssetManagement;
+using Code.Services.Interfaces;
+using Code.UI.Types;
+
 using Cysharp.Threading.Tasks;
+
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
-using BagFight.Core;
-using BagFight.Infrastructure.AssetManagement;
-using BagFight.Services.Interfaces;
-using BagFight.UI.Types;
+
 using Zenjex.Extensions.Attribute;
 using Zenjex.Extensions.Injector;
 
-namespace BagFight.UI
+namespace Code.UI
 {
   /// <summary>
-  /// Один слот снизу.
+  /// Single bottom slot.
   ///
-  /// Отличается от CellView:
-  ///   - Хранит целый предмет (любой формы), а не одну клетку
-  ///   - При OnDrop из сумки возвращает предмет в слот
-  ///   - При OnBeginDrag снимает предмет из слота и отдаёт в DragDropService
+  /// Differs from CellView:
+  ///   - Stores entire item (any shape), not a single cell
+  ///   - OnDrop from bag returns item to slot
+  ///   - OnBeginDrag removes item from slot and passes to DragDropService
   ///
-  /// Краевой случай — слот занят, а сюда пытаются дропнуть:
-  ///   Производим своп: старый предмет уходит в первый свободный слот,
-  ///   новый встаёт сюда. Если своп невозможен — CancelDrag.
+  /// Edge case — slot is occupied and something is dropped here:
+  ///   Perform swap: old item goes to first free slot,
+  ///   new one takes its place. If swap is impossible — CancelDrag.
   /// </summary>
   public class BottomSlotView : ZenjexBehaviour,
     IBeginDragHandler, IDragHandler, IEndDragHandler,
@@ -32,17 +38,17 @@ namespace BagFight.UI
     [SerializeField] private Image _iconImage;
 
     [Header("Colors")]
-    [SerializeField] private Color _emptyColor    = new(0.12f, 0.12f, 0.12f, 0.5f);
+    [SerializeField] private Color _emptyColor = new(0.12f, 0.12f, 0.12f, 0.5f);
     [SerializeField] private Color _occupiedColor = new(0.25f, 0.25f, 0.25f, 0.8f);
 
     [Header("Animation")]
     [SerializeField] private float _bounceDuration = 0.15f;
 
     // ─── Injected ─────────────────────────────────────────────────────────────
-    [Zenjex] private IBottomSlotsService  _slotsService;
+    [Zenjex] private IBottomSlotsService _slotsService;
     [Zenjex] private IGridDragDropService _dragDropService;
-    [Zenjex] private DragIconView         _dragIconView;
-    [Zenjex] private IAssetLoader         _assetLoader;
+    [Zenjex] private DragIconView _dragIconView;
+    [Zenjex] private IAssetLoader _assetLoader;
 
     // ─── State ────────────────────────────────────────────────────────────────
     private int _slotIndex;
@@ -61,7 +67,7 @@ namespace BagFight.UI
 
     private async UniTaskVoid RefreshViewAsync()
     {
-      var item  = _slotsService.GetSlot(_slotIndex);
+      var item = _slotsService.GetSlot(_slotIndex);
       bool empty = item == null;
 
       _background.color = empty ? _emptyColor : _occupiedColor;
@@ -107,7 +113,7 @@ namespace BagFight.UI
     {
       _dragIconView.Hide();
 
-      // Если IsDragging всё ещё true → дроп в пустоту → CancelDrag
+      // If IsDragging is still true → drop in void → CancelDrag
       if (_dragDropService.IsDragging)
       {
         _dragDropService.CancelDrag();
@@ -121,30 +127,30 @@ namespace BagFight.UI
     {
       if (!_dragDropService.IsDragging) return;
 
-      var dragged    = _dragDropService.DraggedItem;
+      var dragged = _dragDropService.DraggedItem;
       var currentItem = _slotsService.GetSlot(_slotIndex);
 
       if (currentItem == null)
       {
-        // Слот пуст — просто кладём
+        // Slot is empty — just place it
         _slotsService.TryPlace(dragged, _slotIndex);
         _dragDropService.EndDrag();
       }
       else
       {
-        // Слот занят — пробуем своп:
-        // старый предмет уходит в первый свободный слот (не этот)
+        // Slot is occupied — try swap:
+        // old item goes to first free slot (not this one)
         _slotsService.TryRemove(_slotIndex, out var displaced);
 
         if (_slotsService.TryPlaceInFirstFreeSlot(displaced, out _))
         {
-          // Своп удался
+          // Swap succeeded
           _slotsService.TryPlace(dragged, _slotIndex);
           _dragDropService.EndDrag();
         }
         else
         {
-          // Свободных слотов нет — возвращаем displaced обратно, отменяем drag
+          // No free slots — return displaced back, cancel drag
           _slotsService.TryPlace(displaced, _slotIndex);
           _dragDropService.CancelDrag();
         }

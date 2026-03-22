@@ -1,19 +1,24 @@
-using System.Collections.Generic;
-using UnityEngine;
-using BagFight.Core;
-using BagFight.Data;
+// Created by Anton Piruev in 2026. 
+// Any direct commercial use of derivative work is strictly prohibited.
 
-namespace BagFight.Tests
+using System.Collections.Generic;
+
+using Code.Core;
+using Code.Data.StaticData;
+
+using UnityEngine;
+
+namespace Code.Tests
 {
   /// <summary>
-  /// Вспомогательные методы для создания тестовых объектов без Unity-контекста.
-  /// ItemConfig создаётся через ScriptableObject.CreateInstance — работает в EditMode.
+  /// Helper methods for creating test objects without Unity context.
+  /// ItemConfig is created via ScriptableObject.CreateInstance — works in EditMode.
   /// </summary>
   internal static class InventoryTestHelpers
   {
     // ─── ItemConfig builders ─────────────────────────────────────────────────
 
-    /// <summary>1×1 предмет (одна клетка)</summary>
+    /// <summary>1×1 item (single cell)</summary>
     public static ItemConfig Single(int level = 1, ItemConfig mergeResult = null)
     {
       var cfg = ScriptableObject.CreateInstance<ItemConfig>();
@@ -21,7 +26,7 @@ namespace BagFight.Tests
       return cfg;
     }
 
-    /// <summary>1×2 предмет (вертикальная полоска)</summary>
+    /// <summary>1×2 item (vertical bar)</summary>
     public static ItemConfig Vertical2(int level = 1)
     {
       var cfg = ScriptableObject.CreateInstance<ItemConfig>();
@@ -32,7 +37,7 @@ namespace BagFight.Tests
       return cfg;
     }
 
-    /// <summary>2×1 предмет (горизонтальная полоска)</summary>
+    /// <summary>2×1 item (horizontal bar)</summary>
     public static ItemConfig Horizontal2(int level = 1)
     {
       var cfg = ScriptableObject.CreateInstance<ItemConfig>();
@@ -43,7 +48,7 @@ namespace BagFight.Tests
       return cfg;
     }
 
-    /// <summary>L-форма: (0,0),(0,1),(1,1)</summary>
+    /// <summary>L-shape: (0,0),(0,1),(1,1)</summary>
     public static ItemConfig LShape(int level = 1)
     {
       var cfg = ScriptableObject.CreateInstance<ItemConfig>();
@@ -54,7 +59,7 @@ namespace BagFight.Tests
       return cfg;
     }
 
-    /// <summary>2×2 квадрат</summary>
+    /// <summary>2×2 square</summary>
     public static ItemConfig Square2x2(int level = 1)
     {
       var cfg = ScriptableObject.CreateInstance<ItemConfig>();
@@ -67,17 +72,17 @@ namespace BagFight.Tests
 
     // ─── GridInventory builder ────────────────────────────────────────────────
 
-    /// <summary>Создаёт прямоугольный грид width×height.</summary>
+    /// <summary>Creates a rectangular grid width×height.</summary>
     public static GridInventory MakeGrid(int width = 5, int height = 7)
     {
       var cells = new System.Collections.Generic.HashSet<Vector2Int>();
       for (int x = 0; x < width; x++)
-      for (int y = 0; y < height; y++)
-        cells.Add(new Vector2Int(x, y));
+        for (int y = 0; y < height; y++)
+          cells.Add(new Vector2Int(x, y));
       return new GridInventory(cells);
     }
 
-    /// <summary>Создаёт предмет и сразу размещает его на гриде.</summary>
+    /// <summary>Creates an item and immediately places it on the grid.</summary>
     public static InventoryItem PlaceItem(GridInventory grid, ItemConfig config, Vector2Int origin)
     {
       var item = new InventoryItem(config, origin);
@@ -87,8 +92,8 @@ namespace BagFight.Tests
   }
 
   /// <summary>
-  /// Reflection-based extension чтобы задавать приватные поля ItemConfig в тестах.
-  /// В продакшн-коде не используется.
+  /// Reflection-based extension to set private fields of ItemConfig in tests.
+  /// Not used in production code.
   /// </summary>
   internal static class ItemConfigTestExtensions
   {
@@ -100,11 +105,11 @@ namespace BagFight.Tests
       ItemConfig mergeResult = null)
     {
       var t = typeof(ItemConfig);
-      SetBacking(t, cfg, "ItemId",      id);
-      SetBacking(t, cfg, "Level",       level);
-      SetBacking(t, cfg, "Shape",       shape);
+      SetBacking(t, cfg, "ItemId", id);
+      SetBacking(t, cfg, "Level", level);
+      SetBacking(t, cfg, "Shape", shape);
       SetBacking(t, cfg, "MergeResult", mergeResult);
-      // Icon (AssetReferenceSprite) не задаём в тестах — логика грида от него не зависит
+      // Don't set Icon (AssetReferenceSprite) in tests — grid logic doesn't depend on it
     }
 
     private static void SetBacking(System.Type type, object obj, string propName, object value)

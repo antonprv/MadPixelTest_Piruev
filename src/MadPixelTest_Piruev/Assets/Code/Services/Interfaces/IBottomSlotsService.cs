@@ -1,7 +1,11 @@
-using R3;
-using BagFight.Core;
+// Created by Anton Piruev in 2026. 
+// Any direct commercial use of derivative work is strictly prohibited.
 
-namespace BagFight.Services.Interfaces
+using Code.Core;
+
+using R3;
+
+namespace Code.Services.Interfaces
 {
   public interface IBottomSlotsService
   {
@@ -10,8 +14,8 @@ namespace BagFight.Services.Interfaces
     Observable<int> OnSlotChanged { get; }
 
     InventoryItem GetSlot(int index);
-    bool          IsSlotEmpty(int index);
-    int           FindFirstFreeSlot();
+    bool IsSlotEmpty(int index);
+    int FindFirstFreeSlot();
 
     bool TryPlace(InventoryItem item, int slotIndex);
     bool TryRemove(int slotIndex, out InventoryItem removed);

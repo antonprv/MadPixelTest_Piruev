@@ -1,25 +1,32 @@
+// Created by Anton Piruev in 2026. 
+// Any direct commercial use of derivative work is strictly prohibited.
+
 using System;
 using System.Threading;
-using Cysharp.Threading.Tasks;
-using R3;
-using UnityEngine;
-using BagFight.Data;
-using BagFight.Infrastructure.AssetManagement;
 
-namespace BagFight.Infrastructure.AssetsPreloader
+using Code.Data.StaticData;
+using Code.Infrastructure.AssetManagement;
+
+using Cysharp.Threading.Tasks;
+
+using R3;
+
+using UnityEngine;
+
+namespace Code.Infrastructure.AssetsPreloader
 {
   /// <summary>
-  /// Прогревает Addressable-иконки всех предметов из ItemManifest до начала геймплея.
+  /// Warms up Addressable icons of all items from ItemManifest before gameplay starts.
   ///
-  /// Паттерн параллельной загрузки:
-  ///   Создаём массив UniTask — по одной задаче на каждый ItemConfig.
-  ///   UniTask.WhenAll запускает их все параллельно.
-  ///   После WhenAll каждый AssetLoader.LoadAsync<Sprite>(icon) возвращает
-  ///   результат из кэша синхронно — без стопа геймплея.
+  /// Parallel loading pattern:
+  ///   Create array of UniTasks — one task per ItemConfig.
+  ///   UniTask.WhenAll runs them all in parallel.
+  ///   After WhenAll, each AssetLoader.LoadAsync<Sprite>(icon) returns
+  ///   result from cache synchronously — without gameplay stop.
   ///
-  /// Прогресс через IProgress<float>:
-  ///   Каждая завершённая задача инкрементирует счётчик и пушит новое значение
-  ///   в _progressSubject → LoadingCurtain подписывается и обновляет полосу.
+  /// Progress via IProgress<float>:
+  ///   Each completed task increments counter and pushes new value
+  ///   to _progressSubject → LoadingCurtain subscribes and updates progress bar.
   /// </summary>
   public class BagAssetsPreloader : IAssetsPreloader
   {
@@ -31,7 +38,7 @@ namespace BagFight.Infrastructure.AssetsPreloader
 
     public BagAssetsPreloader(ItemManifest manifest, IAssetLoader assetLoader)
     {
-      _manifest    = manifest;
+      _manifest = manifest;
       _assetLoader = assetLoader;
     }
 
@@ -43,7 +50,7 @@ namespace BagFight.Infrastructure.AssetsPreloader
 
       int completed = 0;
 
-      // Создаём задачи на каждый предмет, у которого задан Icon
+      // Create tasks for each item that has Icon defined
       var tasks = new UniTask[total];
       for (int i = 0; i < total; i++)
       {
@@ -57,7 +64,7 @@ namespace BagFight.Infrastructure.AssetsPreloader
         }, ct);
       }
 
-      // Параллельная загрузка — все иконки грузятся одновременно
+      // Parallel loading — all icons load simultaneously
       await UniTask.WhenAll(tasks);
 
       _progressSubject.OnNext(1f);

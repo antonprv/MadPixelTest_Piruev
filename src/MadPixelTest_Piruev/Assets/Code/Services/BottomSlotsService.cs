@@ -1,10 +1,15 @@
+// Created by Anton Piruev in 2026.
+// Any direct commercial use of derivative work is strictly prohibited.
+
+using Code.Core;
+using Code.Data.StaticData;
+using Code.Services.Interfaces;
+
 using R3;
-using BagFight.Core;
-using BagFight.Data;
-using BagFight.Services.Interfaces;
+
 using Zenjex.Extensions.Lifecycle;
 
-namespace BagFight.Services
+namespace Code.Services
 {
   public class BottomSlotsService : IBottomSlotsService, IInitializable
   {
@@ -12,7 +17,7 @@ namespace BagFight.Services
     public Observable<int> OnSlotChanged => _onSlotChanged;
 
     private readonly BagConfig _bagConfig;
-    private InventoryItem[]    _slots;
+    private InventoryItem[] _slots;
 
     public int SlotCount => _bagConfig.BottomSlotCount;
 
@@ -28,8 +33,8 @@ namespace BagFight.Services
 
     // ─── Query ────────────────────────────────────────────────────────────────
 
-    public InventoryItem GetSlot(int index)     => _slots[index];
-    public bool          IsSlotEmpty(int index) => _slots[index] == null;
+    public InventoryItem GetSlot(int index) => _slots[index];
+    public bool IsSlotEmpty(int index) => _slots[index] == null;
 
     public int FindFirstFreeSlot()
     {
@@ -43,7 +48,7 @@ namespace BagFight.Services
     public bool TryPlace(InventoryItem item, int slotIndex)
     {
       if (slotIndex < 0 || slotIndex >= _slots.Length) return false;
-      if (_slots[slotIndex] != null)                   return false;
+      if (_slots[slotIndex] != null) return false;
 
       _slots[slotIndex] = item;
       _onSlotChanged.OnNext(slotIndex);
@@ -54,9 +59,9 @@ namespace BagFight.Services
     {
       removed = null;
       if (slotIndex < 0 || slotIndex >= _slots.Length) return false;
-      if (_slots[slotIndex] == null)                   return false;
+      if (_slots[slotIndex] == null) return false;
 
-      removed          = _slots[slotIndex];
+      removed = _slots[slotIndex];
       _slots[slotIndex] = null;
       _onSlotChanged.OnNext(slotIndex);
       return true;

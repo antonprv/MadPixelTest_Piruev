@@ -1,42 +1,46 @@
-using System.Threading;
-using Cysharp.Threading.Tasks;
-using UnityEngine;
-using BagFight.Infrastructure.AssetManagement;
-using BagFight.Infrastructure.Loading;
-using BagFight.Infrastructure.StateMachine.States.Interfaces;
+// Created by Anton Piruev in 2026. 
+// Any direct commercial use of derivative work is strictly prohibited.
 
-namespace BagFight.Infrastructure.StateMachine
+using System.Threading;
+
+using Code.Infrastructure.AssetManagement;
+using Code.Infrastructure.Loading;
+using Code.Infrastructure.StateMachine.States.Interfaces;
+
+using Cysharp.Threading.Tasks;
+
+namespace Code.Infrastructure.StateMachine
 {
   /// <summary>
-  /// Стейт 1 из 3.
+  /// State 1 of 3.
   ///
-  /// Ответственность:
-  ///   1. Инициализация Addressables (один раз за сессию)
-  ///   2. Спавн LoadingCurtain из Addressable-префаба (DontDestroyOnLoad)
-  ///   3. Показ шторки
-  ///   4. Переход в PreloadAssetsState
+  /// Responsibilities:
+  ///   1. Initialize Addressables (once per session)
+  ///   2. Spawn LoadingCurtain from Addressable prefab (DontDestroyOnLoad)
+  ///   3. Show curtain
+  ///   4. Transition to PreloadAssetsState
   ///
-  /// Почему Addressable-спавн здесь, а не в инсталлере:
-  ///   LoadingCurtain нужен ещё до того как загружена основная сцена,
-  ///   поэтому создаём его динамически сразу после инициализации Addressables.
+  /// Why Addressable spawn here, not in installer:
+  ///   LoadingCurtain is needed before main scene is loaded,
+  ///   so we create it dynamically right after Addressables initialization.
   /// </summary>
   public class BootstrapState : IGameState
   {
     public StateType Type => StateType.Bootstrap;
 
     private readonly IGameStateMachine _gsm;
-    private readonly IAssetLoader      _assetLoader;
-    private readonly ILoadingScreen    _loadingScreen;
+    private readonly IAssetLoader _assetLoader;
+    private readonly ILoadingScreen _loadingScreen;
 
     private CancellationTokenSource _cts;
 
     public BootstrapState(
       IGameStateMachine gsm,
-      IAssetLoader      assetLoader,
-      ILoadingScreen    loadingScreen)
+      IAssetLoader assetLoader,
+      ILoadingScreen loadingScreen)
     {
-      _gsm           = gsm;
-      _assetLoader   = assetLoader;
+      _gsm = gsm;
+      _assetLoader = assetLoader;
       _loadingScreen = loadingScreen;
     }
 
@@ -47,17 +51,17 @@ namespace BagFight.Infrastructure.StateMachine
       _cts = new CancellationTokenSource();
       var ct = _cts.Token;
 
-      // 1. Инициализируем Addressables
+      // 1. Initialize Addressables
       await _assetLoader.InitializeAsync();
 
       if (ct.IsCancellationRequested) return;
 
-      // 2. Показываем шторку
+      // 2. Show curtain
       await _loadingScreen.ShowAsync();
 
       if (ct.IsCancellationRequested) return;
 
-      // 3. Переходим к предзагрузке
+      // 3. Transition to asset preloading
       _gsm.Enter<PreloadAssetsState>();
     }
 

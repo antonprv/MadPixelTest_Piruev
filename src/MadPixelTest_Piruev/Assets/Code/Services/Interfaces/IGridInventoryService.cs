@@ -1,17 +1,23 @@
-using System.Collections.Generic;
-using R3;
-using UnityEngine;
-using BagFight.Core;
-using BagFight.Data;
+// Created by Anton Piruev in 2026. 
+// Any direct commercial use of derivative work is strictly prohibited.
 
-namespace BagFight.Services.Interfaces
+using System.Collections.Generic;
+
+using Code.Core;
+using Code.Data.StaticData;
+
+using R3;
+
+using UnityEngine;
+
+namespace Code.Services.Interfaces
 {
   public interface IGridInventoryService
   {
     // ─── Events ───────────────────────────────────────────────────────────────
-    Observable<InventoryItem> OnItemPlaced  { get; }
+    Observable<InventoryItem> OnItemPlaced { get; }
     Observable<InventoryItem> OnItemRemoved { get; }
-    Observable<MergeResult>   OnItemsMerged { get; }
+    Observable<MergeResult> OnItemsMerged { get; }
 
     // ─── Placement ────────────────────────────────────────────────────────────
     bool CanPlace(ItemConfig config, Vector2Int origin, InventoryItem ignore = null);
@@ -19,11 +25,11 @@ namespace BagFight.Services.Interfaces
     bool TryRemove(InventoryItem item);
 
     // ─── Query ────────────────────────────────────────────────────────────────
-    InventoryItem              GetItemAt(Vector2Int cell);
+    InventoryItem GetItemAt(Vector2Int cell);
     IReadOnlyList<InventoryItem> GetAllItems();
 
     // ─── Merge ────────────────────────────────────────────────────────────────
-    bool          CanMerge(InventoryItem dragged, Vector2Int targetCell, out InventoryItem targetItem);
+    bool CanMerge(InventoryItem dragged, Vector2Int targetCell, out InventoryItem targetItem);
     InventoryItem Merge(InventoryItem a, InventoryItem b);
   }
 

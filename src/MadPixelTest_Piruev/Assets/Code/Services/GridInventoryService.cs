@@ -1,34 +1,41 @@
+// Created by Anton Piruev in 2026. 
+// Any direct commercial use of derivative work is strictly prohibited.
+
 using System.Collections.Generic;
+
+using Code.Core;
+using Code.Data.StaticData;
+using Code.Services.Interfaces;
+
 using R3;
+
 using UnityEngine;
-using BagFight.Core;
-using BagFight.Data;
-using BagFight.Services.Interfaces;
+
 using Zenjex.Extensions.Lifecycle;
 
-namespace BagFight.Services
+namespace Code.Services
 {
   public class GridInventoryService : IGridInventoryService, IInitializable
   {
     // ─── Events ───────────────────────────────────────────────────────────────
-    private readonly Subject<InventoryItem> _onItemPlaced  = new();
+    private readonly Subject<InventoryItem> _onItemPlaced = new();
     private readonly Subject<InventoryItem> _onItemRemoved = new();
-    private readonly Subject<MergeResult>   _onItemsMerged = new();
+    private readonly Subject<MergeResult> _onItemsMerged = new();
 
-    public Observable<InventoryItem> OnItemPlaced  => _onItemPlaced;
+    public Observable<InventoryItem> OnItemPlaced => _onItemPlaced;
     public Observable<InventoryItem> OnItemRemoved => _onItemRemoved;
-    public Observable<MergeResult>   OnItemsMerged => _onItemsMerged;
+    public Observable<MergeResult> OnItemsMerged => _onItemsMerged;
 
     // ─── Dependencies ─────────────────────────────────────────────────────────
     private readonly BagConfig _bagConfig;
-    private GridInventory      _grid;
+    private GridInventory _grid;
 
     public GridInventoryService(BagConfig bagConfig)
     {
       _bagConfig = bagConfig;
     }
 
-    // IInitializable — вызывается Zenjex после сборки контейнера
+    // IInitializable — called by Zenjex after container assembly
     public void Initialize()
     {
       _grid = new GridInventory(_bagConfig.GetActiveCellsSet());
@@ -59,8 +66,8 @@ namespace BagFight.Services
 
     // ─── Query ────────────────────────────────────────────────────────────────
 
-    public InventoryItem              GetItemAt(Vector2Int cell) => _grid.GetItemAt(cell);
-    public IReadOnlyList<InventoryItem> GetAllItems()            => _grid.Items;
+    public InventoryItem GetItemAt(Vector2Int cell) => _grid.GetItemAt(cell);
+    public IReadOnlyList<InventoryItem> GetAllItems() => _grid.Items;
 
     // ─── Merge ────────────────────────────────────────────────────────────────
 

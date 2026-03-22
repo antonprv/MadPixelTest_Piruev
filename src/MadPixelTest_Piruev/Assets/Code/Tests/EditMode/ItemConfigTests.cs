@@ -1,10 +1,13 @@
-using NUnit.Framework;
-using System.Collections.Generic;
-using System.Linq;
-using UnityEngine;
-using BagFight.Data;
+// Created by Anton Piruev in 2026. 
+// Any direct commercial use of derivative work is strictly prohibited.
 
-namespace BagFight.Tests.EditMode
+using System.Linq;
+
+using NUnit.Framework;
+
+using UnityEngine;
+
+namespace Code.Tests.EditMode
 {
   [TestFixture]
   public class ItemConfigTests
@@ -12,7 +15,7 @@ namespace BagFight.Tests.EditMode
     [Test]
     public void GetOccupiedCells_SingleCell_ReturnsOriginOnly()
     {
-      var cfg   = InventoryTestHelpers.Single();
+      var cfg = InventoryTestHelpers.Single();
       var cells = cfg.GetOccupiedCells(new Vector2Int(3, 4)).ToList();
 
       Assert.AreEqual(1, cells.Count);
@@ -22,9 +25,9 @@ namespace BagFight.Tests.EditMode
     [Test]
     public void GetOccupiedCells_LShape_ReturnsCorrectThreeCells()
     {
-      var cfg    = InventoryTestHelpers.LShape();
+      var cfg = InventoryTestHelpers.LShape();
       var origin = new Vector2Int(2, 2);
-      var cells  = cfg.GetOccupiedCells(origin).ToList();
+      var cells = cfg.GetOccupiedCells(origin).ToList();
 
       Assert.AreEqual(3, cells.Count);
       Assert.Contains(new Vector2Int(2, 2), cells);
@@ -58,8 +61,8 @@ namespace BagFight.Tests.EditMode
     public void CanMerge_WithMergeResult_IsTrue()
     {
       var result = InventoryTestHelpers.Single(level: 2);
-      // MergeResult задаётся через SetTestData → backing field
-      var cfg    = InventoryTestHelpers.Single(level: 1, mergeResult: result);
+      // MergeResult is set via SetTestData → backing field
+      var cfg = InventoryTestHelpers.Single(level: 1, mergeResult: result);
       Assert.IsTrue(cfg.CanMerge);
     }
 

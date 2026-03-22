@@ -1,23 +1,27 @@
-using BagFight.Infrastructure.StateMachine.Factory;
-using BagFight.Infrastructure.StateMachine.States.Interfaces;
+// Created by Anton Piruev in 2026. 
+// Any direct commercial use of derivative work is strictly prohibited.
+
+using Code.Infrastructure.StateMachine.Factory;
+using Code.Infrastructure.StateMachine.States.Interfaces;
+
 using Zenjex.Extensions.Lifecycle;
 
-namespace BagFight.Infrastructure.StateMachine
+namespace Code.Infrastructure.StateMachine
 {
   /// <summary>
-  /// Конечный автомат игры.
+  /// Game state machine.
   ///
-  /// Жизненный цикл стейта:
-  ///   1. ChangeState: вызывает Exit() на активном стейте
-  ///   2. StateFactory.Create: резолвит новый стейт из Reflex-контейнера
-  ///   3. Enter() / Enter(payload): запускает стейт
+  /// State lifecycle:
+  ///   1. ChangeState: calls Exit() on active state
+  ///   2. StateFactory.Create: resolves new state from Reflex container
+  ///   3. Enter() / Enter(payload): starts the state
   ///
-  /// IInitializable: Zenjex вызывает Initialize() после сборки контейнера →
-  ///   сразу входим в BootstrapState.
+  /// IInitializable: Zenjex calls Initialize() after container assembly —
+  ///   immediately enter BootstrapState.
   /// </summary>
   public class GameStateMachine : IGameStateMachine, IInitializable
   {
-    public StateType CurrentState  { get; private set; }
+    public StateType CurrentState { get; private set; }
     public StateType PreviousState { get; private set; }
 
     private IGameExitableState _activeState;
@@ -28,7 +32,7 @@ namespace BagFight.Infrastructure.StateMachine
       _stateFactory = stateFactory;
     }
 
-    // IInitializable — вызывается Zenjex, стартует цепочку стейтов
+    // IInitializable — called by Zenjex, starts state chain
     public void Initialize() => Enter<BootstrapState>();
 
     // ─── Transitions ──────────────────────────────────────────────────────────
@@ -54,8 +58,8 @@ namespace BagFight.Infrastructure.StateMachine
       PreviousState = CurrentState;
 
       var next = _stateFactory.Create<TState>();
-      _activeState  = next;
-      CurrentState  = next.Type;
+      _activeState = next;
+      CurrentState = next.Type;
       return next;
     }
   }

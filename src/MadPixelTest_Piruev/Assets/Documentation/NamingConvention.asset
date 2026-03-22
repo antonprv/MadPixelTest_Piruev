@@ -1,0 +1,136 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc6f926697812614b85702b2e9982a93, type: 3}
+  m_Name: NamingConvention
+  m_EditorClassIdentifier: Documentation::NamingConvention
+  conventionText: '<b><size=16>Prefab Naming</size></b>
+
+
+    This naming convention
+    serves as a practical middle ground between Unity and Unreal Engine conventions.
+    The prefixes act as quick visual hints to help team members and developers instantly
+    understand what type of prefab they''re working with, without needing to open
+    it first.
+
+
+    <b><size=14>Prefix Guide</size></b>
+
+
+    <b>P_</b> - Standard
+    Prefab
+
+    A basic prefab containing any general game object or component setup.
+
+
+    <b>P_V_</b>
+    - Prefab Variant
+
+    A variant of an existing prefab with modified properties
+    or components.
+
+
+    <b>PA_</b> - Prefab Actor
+
+    A prefab representing an
+    interactive game entity or character (borrowed from Unreal''s "Actor" concept).
+
+
+    <b>PAV_</b>
+    - Prefab Actor Variant
+
+    A variant of an Actor prefab with customized settings.
+
+
+    <b>PP_</b>
+    - Prefab Pawn
+
+    A prefab for controllable characters or entities (using Unreal''s
+    "Pawn" terminology for player-controllable objects).
+
+
+    <b>PAI_</b> - Prefab
+    AI-Controlled Pawn
+
+    A prefab specifically for AI-controlled characters, making
+    it clear this entity uses autonomous behavior.
+
+
+    <b>PUI_</b> - Prefab UI
+
+    A
+    prefab containing user interface elements.
+
+
+    <b><size=16>UI Element Suffixes</size></b>
+
+
+    UI
+    elements within prefabs use descriptive suffixes to identify their function and
+    type at a glance. These suffixes are appended to the end of GameObject names
+    within UI prefabs.
+
+
+    <b>_CNT</b> - Container
+
+    An empty container object
+    used for layout and organization, similar to a <div> in HTML. Typically holds
+    other UI elements and helps structure the interface hierarchy.
+
+    Example:
+    MainMenu_CNT, InventoryPanel_CNT
+
+
+    <b>_BTN</b> - Button
+
+    A button object
+    that handles user input and interactions. Usually contains a Button component
+    along with visual elements and text.
+
+    Example: StartGame_BTN, CloseWindow_BTN
+
+
+    <b>_BG</b>
+    - Background
+
+    A background object that provides visual backing for UI panels,
+    windows, or other elements. Often contains an Image component for rendering sprites
+    or solid colors.
+
+    Example: Panel_BG, Window_BG
+
+
+    <b>_TXT</b> - Text
+
+    A
+    text display object, usually a TextMeshPro component. Used for labels, titles,
+    descriptions, and any other text content in the UI.
+
+    Example: PlayerName_TXT,
+    ScoreLabel_TXT
+
+
+    <b>_IMG</b> - Image
+
+    A pure visual element containing
+    only an image component without interactive logic. Used for icons, decorative
+    elements, sprites, and other graphical content that doesn''t require user interaction.
+
+    Example:
+    PlayerAvatar_IMG, ItemIcon_IMG, Decoration_IMG
+
+
+    <i>Note: These prefixes
+    and suffixes are organizational tools to improve workflow efficiency. They give
+    you an at-a-glance understanding of a prefab''s purpose and contents, saving
+    time during development and collaboration. When combined, they create clear,
+    self-documenting names like ''PUI_InventoryWindow'' containing objects such as
+    ''Header_CNT'', ''CloseButton_BTN'', ''Background_BG'', and ''Title_TXT''.</i>'

@@ -1,20 +1,24 @@
-using UnityEngine;
-using BagFight.Core;
-using BagFight.UI.Types;
+// Created by Anton Piruev in 2026. 
+// Any direct commercial use of derivative work is strictly prohibited.
 
-namespace BagFight.Services.Interfaces
+using Code.Core;
+using Code.UI.Types;
+
+using UnityEngine;
+
+namespace Code.Services.Interfaces
 {
   public interface IGridDragDropService
   {
-    bool          IsDragging      { get; }
-    InventoryItem DraggedItem     { get; }
-    DragSource    Source          { get; }
-    Vector2Int    SourceOrigin    { get; } // origin предмета ДО начала драга
-    int           SourceSlotIndex { get; } // -1 если источник — грид
+    bool IsDragging { get; }
+    InventoryItem DraggedItem { get; }
+    DragSource Source { get; }
+    Vector2Int SourceOrigin { get; } // item origin BEFORE drag start
+    int SourceSlotIndex { get; } // -1 if source is grid
 
     /// <summary>
-    /// Смещение от захваченной ячейки до origin предмета.
-    /// Пример: тащим L-шку за нижнюю ячейку (offset (0,2)) —
+    /// Offset from grabbed cell to item origin.
+    /// Example: dragging L-shape by bottom cell (offset (0,2)) —
     /// origin = hoveredCell - DragOffset.
     /// </summary>
     Vector2Int DragOffset { get; }
@@ -23,8 +27,8 @@ namespace BagFight.Services.Interfaces
     void EndDrag();
 
     /// <summary>
-    /// Отменяет драг и возвращает предмет на исходное место.
-    /// Вызывается, когда предмет дропнули в недопустимую позицию.
+    /// Cancels drag and returns item to original position.
+    /// Called when item is dropped in invalid position.
     /// </summary>
     void CancelDrag();
   }
