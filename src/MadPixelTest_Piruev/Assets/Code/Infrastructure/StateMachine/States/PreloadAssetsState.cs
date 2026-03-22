@@ -33,14 +33,14 @@ namespace Code.Infrastructure.StateMachine
 
     private readonly IGameStateMachine _gsm;
     private readonly IAssetsPreloader _preloader;
-    private readonly ILoadingScreen _loadingScreen;
+    private readonly ILoadScreen _loadingScreen;
 
     private CancellationTokenSource _cts;
 
     public PreloadAssetsState(
       IGameStateMachine gsm,
       IAssetsPreloader preloader,
-      ILoadingScreen loadingScreen)
+      ILoadScreen loadingScreen)
     {
       _gsm = gsm;
       _preloader = preloader;

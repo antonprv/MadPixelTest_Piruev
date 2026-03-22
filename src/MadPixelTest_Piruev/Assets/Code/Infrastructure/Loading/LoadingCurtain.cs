@@ -1,6 +1,8 @@
 // Created by Anton Piruev in 2026. 
 // Any direct commercial use of derivative work is strictly prohibited.
 
+using Code.Common.FastMath;
+
 using Cysharp.Threading.Tasks;
 
 using UnityEngine;
@@ -10,7 +12,7 @@ namespace Code.Infrastructure.Loading
 {
   /// <summary>
   /// Loading screen: semi-transparent overlay + progress bar.
-  /// Instantiated from Addressable prefab in BootstrapState.
+  /// Created together with GameInstance, this is a singleton
   ///
   /// Prefab hierarchy:
   ///   LoadingCurtain (CanvasGroup, Image — full screen)
@@ -18,46 +20,48 @@ namespace Code.Infrastructure.Loading
   ///       ├── Background
   ///       ├── Fill Area / Fill
   /// </summary>
-  public class LoadingCurtain : MonoBehaviour, ILoadingScreen
+  public class LoadingCurtain : MonoBehaviour, ILoadScreen
   {
-    [SerializeField] private CanvasGroup _canvasGroup;
-    [SerializeField] private Slider _progressBar;
+    public CanvasGroup canvasGroup;
+    public Slider progressBar;
 
     [SerializeField] private float _fadeDuration = 0.35f;
 
     private void Awake()
     {
       DontDestroyOnLoad(gameObject);
-      _canvasGroup.alpha = 0f;
-      _canvasGroup.blocksRaycasts = false;
-      if (_progressBar != null) _progressBar.value = 0f;
+      canvasGroup.alpha = 0f;
+      canvasGroup.blocksRaycasts = false;
+      if (progressBar != null) progressBar.value = 0f;
     }
 
-    // ─── ILoadingScreen ───────────────────────────────────────────────────────
+    #region ILoadingScreen
+
+    #endregion
 
     public void Show() => ShowAsync().Forget();
     public void Hide() => HideAsync().Forget();
 
     public void SetProgress(float value)
     {
-      if (_progressBar != null)
-        _progressBar.value = Mathf.Clamp01(value);
+      if (progressBar != null)
+        progressBar.value = FMath.Clamp01(value);
     }
 
     public async UniTask ShowAsync()
     {
-      _canvasGroup.blocksRaycasts = true;
+      canvasGroup.blocksRaycasts = true;
       await FadeAsync(0f, 1f, _fadeDuration);
     }
 
     public async UniTask HideAsync()
     {
       await FadeAsync(1f, 0f, _fadeDuration);
-      _canvasGroup.blocksRaycasts = false;
-      if (_progressBar != null) _progressBar.value = 0f;
+      canvasGroup.blocksRaycasts = false;
+      if (progressBar != null) progressBar.value = 0f;
     }
 
-    // ─── Helpers ──────────────────────────────────────────────────────────────
+    #region Helpers
 
     private async UniTask FadeAsync(float from, float to, float duration)
     {
@@ -65,10 +69,12 @@ namespace Code.Infrastructure.Loading
       while (elapsed < duration)
       {
         elapsed += Time.unscaledDeltaTime;
-        _canvasGroup.alpha = Mathf.Lerp(from, to, elapsed / duration);
+        canvasGroup.alpha = Mathf.Lerp(from, to, elapsed / duration);
         await UniTask.Yield(PlayerLoopTiming.Update);
       }
-      _canvasGroup.alpha = to;
+      canvasGroup.alpha = to;
     }
+
+    #endregion
   }
 }

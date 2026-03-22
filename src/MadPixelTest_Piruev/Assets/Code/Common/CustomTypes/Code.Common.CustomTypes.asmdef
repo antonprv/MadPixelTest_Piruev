@@ -1,0 +1,16 @@
+{
+    "name": "Code.Common.CustomTypes",
+    "rootNamespace": "",
+    "references": [
+        "GUID:7b479f7a5a5eae348b6a74793e99269f"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

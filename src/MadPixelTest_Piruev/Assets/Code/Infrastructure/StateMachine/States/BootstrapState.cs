@@ -30,14 +30,14 @@ namespace Code.Infrastructure.StateMachine
 
     private readonly IGameStateMachine _gsm;
     private readonly IAssetLoader _assetLoader;
-    private readonly ILoadingScreen _loadingScreen;
+    private readonly ILoadScreen _loadingScreen;
 
     private CancellationTokenSource _cts;
 
     public BootstrapState(
       IGameStateMachine gsm,
       IAssetLoader assetLoader,
-      ILoadingScreen loadingScreen)
+      ILoadScreen loadingScreen)
     {
       _gsm = gsm;
       _assetLoader = assetLoader;

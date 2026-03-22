@@ -35,12 +35,15 @@ namespace Zenjex.Extensions.Runner
   /// </summary>
   public static class ZenjexRunner
   {
-    // ── Internal state ────────────────────────────────────────────────────────
 
-    private static readonly HashSet<int> _injected = new();
+    #region Internal state
+
+    private static readonly HashSet<EntityId> _injected = new();
     private static bool _launched;
 
-    // ── Debug registry (read by ZenjexDebuggerWindow) ─────────────────────────
+    #endregion
+
+    #region Debug registry (read by ZenjexDebuggerWindow)
 
     /// <summary>Records of all injected objects, kept for the debugger window.</summary>
     public static readonly List<InjectedRecord> InjectedRecords = new();
@@ -48,10 +51,12 @@ namespace Zenjex.Extensions.Runner
     /// <summary>Fires whenever a new object is injected or the state is reset.</summary>
     public static event Action OnStateChanged;
 
+    #endregion
+
     internal static bool IsLaunched => _launched;
     public static bool IsReady => _launched;
 
-    // ── Bootstrap ─────────────────────────────────────────────────────────────
+    #region Bootstrap
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void Initialize()
@@ -65,7 +70,9 @@ namespace Zenjex.Extensions.Runner
       SceneManager.sceneLoaded += OnSceneLoaded;
     }
 
-    // ── Pass 1: inside ProjectRootInstaller.Awake() ───────────────────────────
+    #endregion
+
+    #region Pass 1: inside ProjectRootInstaller.Awake()
 
     private static void OnContainerReady()
     {
@@ -75,7 +82,9 @@ namespace Zenjex.Extensions.Runner
       OnStateChanged?.Invoke();
     }
 
-    // ── Pass 2: after InstallGameInstanceRoutine() ────────────────────────────
+    #endregion
+
+    #region Pass 2: after InstallGameInstanceRoutine()
 
     private static void OnGameLaunched()
     {
@@ -87,7 +96,9 @@ namespace Zenjex.Extensions.Runner
       OnStateChanged?.Invoke();
     }
 
-    // ── Pass 3: additive scenes loaded after launch ───────────────────────────
+    #endregion
+
+    #region Pass 3: additive scenes loaded after launch
 
     private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
@@ -96,7 +107,9 @@ namespace Zenjex.Extensions.Runner
       OnStateChanged?.Invoke();
     }
 
-    // ── Scene walking ─────────────────────────────────────────────────────────
+    #endregion
+
+    #region Scene walking
 
     private static void InjectScene(Scene scene, InjectionPass pass)
     {
@@ -105,11 +118,13 @@ namespace Zenjex.Extensions.Runner
           TryInject(mb, pass, scene.name);
     }
 
-    // ── Per-object injection ──────────────────────────────────────────────────
+    #endregion
+
+    #region Per-object injection
 
     private static void TryInject(MonoBehaviour mb, InjectionPass pass, string sceneName)
     {
-      var id = mb.GetInstanceID();
+      var id = mb.GetEntityId();
       if (_injected.Contains(id)) return;
       if (!ZenjexInjector.HasZenjexMembers(mb.GetType())) return;
 
@@ -133,7 +148,9 @@ namespace Zenjex.Extensions.Runner
       ));
     }
 
-    // ── Runtime Instantiate support ───────────────────────────────────────────
+    #endregion
+
+    #region Runtime Instantiate support
 
     /// <summary>
     /// Call immediately after Instantiate() to inject [Zenjex] members
@@ -159,7 +176,9 @@ namespace Zenjex.Extensions.Runner
       OnStateChanged?.Invoke();
     }
 
-    // ── Called by ZenjexBehaviour to avoid double injection ───────────────────
+    #endregion
+
+    #region Called by ZenjexBehaviour to avoid double injection
 
     /// <summary>
     /// Registers an instance as already injected so ZenjexRunner won't re-inject it.
@@ -167,7 +186,7 @@ namespace Zenjex.Extensions.Runner
     /// </summary>
     public static void MarkInjected(MonoBehaviour mb)
     {
-      var id = mb.GetInstanceID();
+      var id = mb.GetEntityId();
       if (_injected.Contains(id)) return;
 
       _injected.Add(id);
@@ -182,7 +201,9 @@ namespace Zenjex.Extensions.Runner
       OnStateChanged?.Invoke();
     }
 
-    // ── Data types ────────────────────────────────────────────────────────────
+    #endregion
+
+    #region Data types
 
     public enum InjectionPass
     {
@@ -210,5 +231,8 @@ namespace Zenjex.Extensions.Runner
         IsLate = isLate;
       }
     }
+
+    #endregion
+
   }
 }

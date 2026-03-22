@@ -27,22 +27,24 @@ namespace Zenjex.Extensions.SceneContext
   /// </summary>
   public static class ZenjexSceneContext
   {
-    private static readonly Dictionary<int, Container> _containers = new();
-    private static int _lastRegisteredHandle = -1;
+    private static readonly Dictionary<ulong, Container> _containers = new();
+    private static ulong _lastRegisteredHandle = ulong.MaxValue; // sentinel "empty"
 
     // ── Registration (called by SceneInstaller) ───────────────────────────────
 
     internal static void Register(UnityEngine.SceneManagement.Scene scene, Container container)
     {
-      _containers[scene.handle] = container;
-      _lastRegisteredHandle = scene.handle;
+      var key = scene.handle.GetRawData();
+      _containers[key] = container;
+      _lastRegisteredHandle = key;
     }
 
     internal static void Unregister(UnityEngine.SceneManagement.Scene scene)
     {
-      _containers.Remove(scene.handle);
-      if (_lastRegisteredHandle == scene.handle)
-        _lastRegisteredHandle = -1;
+      var key = scene.handle.GetRawData();
+      _containers.Remove(key);
+      if (_lastRegisteredHandle == key)
+        _lastRegisteredHandle = ulong.MaxValue;
     }
 
     // ── Public API ────────────────────────────────────────────────────────────
@@ -52,7 +54,7 @@ namespace Zenjex.Extensions.SceneContext
     /// that scene has no <see cref="SceneInstaller"/>.
     /// </summary>
     public static Container Get(UnityEngine.SceneManagement.Scene scene) =>
-      _containers.TryGetValue(scene.handle, out var c) ? c : null;
+      _containers.TryGetValue(scene.handle.GetRawData(), out var c) ? c : null;
 
     /// <summary>
     /// Returns the scene-scoped container for the scene that was most recently loaded
@@ -60,7 +62,7 @@ namespace Zenjex.Extensions.SceneContext
     /// Returns null if no scene container is active.
     /// </summary>
     public static Container GetActive() =>
-      _lastRegisteredHandle >= 0 && _containers.TryGetValue(_lastRegisteredHandle, out var c)
+      _lastRegisteredHandle != ulong.MaxValue && _containers.TryGetValue(_lastRegisteredHandle, out var c)
         ? c
         : null;
 
@@ -80,7 +82,7 @@ namespace Zenjex.Extensions.SceneContext
     }
 
     /// <summary>Returns true if at least one scene container is currently registered.</summary>
-    public static bool HasActiveScene => _lastRegisteredHandle >= 0 &&
+    public static bool HasActiveScene => _lastRegisteredHandle != ulong.MaxValue &&
                                          _containers.ContainsKey(_lastRegisteredHandle);
   }
 }

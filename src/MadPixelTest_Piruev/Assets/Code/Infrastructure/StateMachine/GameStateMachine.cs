@@ -4,8 +4,6 @@
 using Code.Infrastructure.StateMachine.Factory;
 using Code.Infrastructure.StateMachine.States.Interfaces;
 
-using Zenjex.Extensions.Lifecycle;
-
 namespace Code.Infrastructure.StateMachine
 {
   /// <summary>
@@ -19,7 +17,7 @@ namespace Code.Infrastructure.StateMachine
   /// IInitializable: Zenjex calls Initialize() after container assembly —
   ///   immediately enter BootstrapState.
   /// </summary>
-  public class GameStateMachine : IGameStateMachine, IInitializable
+  public class GameStateMachine : IGameStateMachine
   {
     public StateType CurrentState { get; private set; }
     public StateType PreviousState { get; private set; }
@@ -27,15 +25,9 @@ namespace Code.Infrastructure.StateMachine
     private IGameExitableState _activeState;
     private readonly StateFactory _stateFactory;
 
-    public GameStateMachine(StateFactory stateFactory)
-    {
-      _stateFactory = stateFactory;
-    }
+    public GameStateMachine(StateFactory stateFactory) => _stateFactory = stateFactory;
 
-    // IInitializable — called by Zenjex, starts state chain
-    public void Initialize() => Enter<BootstrapState>();
-
-    // ─── Transitions ──────────────────────────────────────────────────────────
+    #region Transitions
 
     public void Enter<TState>() where TState : class, IGameState
     {
@@ -50,7 +42,9 @@ namespace Code.Infrastructure.StateMachine
       state.Enter(payload);
     }
 
-    // ─── Helpers ──────────────────────────────────────────────────────────────
+    #endregion
+
+    #region Helpers
 
     private TState ChangeState<TState>() where TState : class, IGameExitableState
     {
@@ -62,5 +56,7 @@ namespace Code.Infrastructure.StateMachine
       CurrentState = next.Type;
       return next;
     }
+
+    #endregion
   }
 }
