@@ -1,0 +1,1 @@
+This project is using Unity 6.4 and Zenjex is also updated to that version. Opening it on any version lower than Unity 6.4 might cause Zenjex to be unstable. If you're opening this on any other unity version, consider replacing internal Zenjex version with this one: https://github.com/antonprv/Zenjex/releases
