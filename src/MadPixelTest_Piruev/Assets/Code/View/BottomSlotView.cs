@@ -13,16 +13,7 @@ using Zenjex.Extensions.Injector;
 
 namespace Code.View
 {
-  /// <summary>
-  /// MVVM View — single bottom slot.
-  ///
-  /// Binds to IBottomSlotViewModel:
-  ///   - IsEmpty / BackgroundColor / Icon → UI components
-  ///   - Input events → ViewModel commands
-  ///
-  /// ViewModel is assigned by BottomSlotsView via SetViewModel().
-  /// </summary>
-  public class BottomSlotView : MonoBehaviour,
+  public class BottomSlotView : ZenjexBehaviour,
     IBeginDragHandler, IDragHandler, IEndDragHandler,
     IDropHandler
   {
@@ -34,25 +25,17 @@ namespace Code.View
     [SerializeField] private float _bounceDuration = 0.15f;
 
     private IBottomSlotViewModel _viewModel;
-    private CompositeDisposable _disposables;
-
-    #region Init (called by BottomSlotsView)
+    private CompositeDisposable  _disposables;
 
     public void SetViewModel(IBottomSlotViewModel viewModel)
     {
       _viewModel = viewModel;
-
       _disposables?.Dispose();
       _disposables = new CompositeDisposable();
-
       Bind();
     }
 
-    #endregion
-
     private void OnDestroy() => _disposables?.Dispose();
-
-    #region Binding
 
     private void Bind()
     {
@@ -64,43 +47,37 @@ namespace Code.View
         .Subscribe(sprite =>
         {
           if (_iconImage == null) return;
-          _iconImage.sprite = sprite;
+          _iconImage.sprite  = sprite;
           _iconImage.enabled = sprite != null;
         })
         .AddTo(_disposables);
     }
 
-    #endregion
+    #region Input
 
-    #region Input → ViewModel commands
+    public void OnBeginDrag(PointerEventData e) => _viewModel?.OnBeginDrag(e.position);
+    public void OnDrag(PointerEventData e)      => _viewModel?.OnDrag(e.position);
+    public void OnEndDrag(PointerEventData e)   => _viewModel?.OnEndDrag();
 
-    public void OnBeginDrag(PointerEventData eventData) =>
-      _viewModel?.OnBeginDrag(eventData.position);
-
-    public void OnDrag(PointerEventData eventData) =>
-      _viewModel?.OnDrag(eventData.position);
-
-    public void OnEndDrag(PointerEventData eventData) =>
-      _viewModel?.OnEndDrag();
-
-    public void OnDrop(PointerEventData eventData)
+    public void OnDrop(PointerEventData e)
     {
       _viewModel?.OnDrop();
+      // Bounce is also triggered reactively via BottomSlotsView → IsEmpty subscription,
+      // but calling it here too gives instant feedback on direct OnDrop
       PlayBounce();
     }
 
     #endregion
 
-    #region Animation (purely visual)
-
-    private void PlayBounce()
+    /// <summary>
+    /// Public so BottomSlotsView can trigger it reactively when an item
+    /// returns to this slot via cancel/fly-back.
+    /// </summary>
+    public void PlayBounce()
     {
+      LeanTween.cancel(gameObject);
       transform.localScale = Vector3.one * 0.85f;
-      LeanTween
-        .scale(gameObject, Vector3.one, _bounceDuration)
-        .setEaseOutBack();
+      LeanTween.scale(gameObject, Vector3.one, _bounceDuration).setEaseOutBack();
     }
-
-    #endregion
   }
 }

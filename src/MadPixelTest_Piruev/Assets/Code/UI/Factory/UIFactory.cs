@@ -2,6 +2,7 @@
 // Any direct commercial use of derivative work is strictly prohibited.
 
 using Code.Infrastructure.AssetManagement;
+using Code.Infrastructure.Services;
 using Code.View;
 using Code.ViewModel.Bag;
 using Code.ViewModel.BottomSlots;
@@ -31,20 +32,31 @@ namespace Code.UI.Factory
       var prefab = await _assetLoader.LoadAsync<GameObject>(BagAssetAddresses.BagCanvasAddress);
       var canvas = Object.Instantiate(prefab);
 
-      // Resolve ViewModels lazily — domain services are initialized at this point
-      var bagViewModel          = _container.Resolve<IBagViewModel>();
-      var bottomSlotsViewModel  = _container.Resolve<IBottomSlotsViewModel>();
-      var dragIconViewModel     = _container.Resolve<IDragIconViewModel>();
+      var bagViewModel         = _container.Resolve<IBagViewModel>();
+      var bottomSlotsViewModel = _container.Resolve<IBottomSlotsViewModel>();
+      var dragIconViewModel    = _container.Resolve<IDragIconViewModel>();
 
-      // BagView needs assetLoader to load item icon sprites
-      canvas.GetComponentInChildren<BagView>(includeInactive: true)
-        .Construct(bagViewModel, _assetLoader);
+      // BagView needs assetLoader to load item icons
+      var bagView = canvas.GetComponentInChildren<BagView>(includeInactive: true);
+      bagView.Construct(bagViewModel, _assetLoader);
 
-      canvas.GetComponentInChildren<BottomSlotsView>(includeInactive: true)
-        .Construct(bottomSlotsViewModel);
+      // BottomSlotsView also acts as ISlotScreenPositionProvider —
+      // register it in the container so DragDropPresenter can resolve it
+      var bottomSlotsView = canvas.GetComponentInChildren<BottomSlotsView>(includeInactive: true);
+      bottomSlotsView.Construct(bottomSlotsViewModel);
 
-      canvas.GetComponentInChildren<DragIconView>(includeInactive: true)
-        .Construct(dragIconViewModel);
+      // Register the position provider so DragDropPresenter can use it
+      // (late binding after container was built — use RootContext if available,
+      //  otherwise store on a static/singleton helper)
+      SlotPositionProviderLocator.Register(bottomSlotsView);
+
+      // DragIconView needs grid metrics to size the drag icon at ½ footprint
+      // Read them from the already-constructed BagView
+      float step    = bagView.CellStep;
+      float spacing = bagView.CellSpacing;
+
+      var dragIconView = canvas.GetComponentInChildren<DragIconView>(includeInactive: true);
+      dragIconView.Construct(dragIconViewModel, step, spacing);
     }
   }
 }

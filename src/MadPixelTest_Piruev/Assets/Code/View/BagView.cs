@@ -49,6 +49,10 @@ namespace Code.View
     private float _step;
     private float _spacing;
 
+    /// <summary>Computed cell size + spacing — used by DragIconView to size the drag icon.</summary>
+    public float CellStep    => _step;
+    public float CellSpacing => _spacing;
+
     /// <summary>Called by UIFactory after domain services are initialized.</summary>
     public void Construct(IBagViewModel bagViewModel, IAssetLoader assetLoader)
     {
